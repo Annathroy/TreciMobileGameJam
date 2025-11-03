@@ -14,8 +14,10 @@ public class Projectile : MonoBehaviour
 
     private void Update()
     {
-        transform.Translate(Vector3.forward * speed * Time.deltaTime);
-        timeAlive += Time.deltaTime;
+        // Move the projectile in the direction it is facing
+        transform.position += transform.forward * speed * Time.deltaTime;
+
+        // Track the time the projectile has been alive
 
         if (timeAlive >= lifetime)
         {
