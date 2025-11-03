@@ -498,7 +498,7 @@
                     "path": "<Touchscreen>/Press",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";Touch",
                     "action": "Touch",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -509,7 +509,7 @@
                     "path": "<Touchscreen>/primaryTouch/position",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";Touch",
                     "action": "TouchPosition",
                     "isComposite": false,
                     "isPartOfComposite": false
