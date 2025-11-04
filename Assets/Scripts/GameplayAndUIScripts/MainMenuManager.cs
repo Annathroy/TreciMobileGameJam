@@ -5,10 +5,7 @@ using TMPro;
 
 public class MainMenuManager : MonoBehaviour
 {
-
-
     [Header("Scenes")]
-    [SerializeField] private string gameplaySceneName = "GamePlayScene";
     [SerializeField] private string mainMenuSceneName = "MainMenu";
 
     [Header("Panels")]
@@ -16,7 +13,8 @@ public class MainMenuManager : MonoBehaviour
     [SerializeField] private GameObject optionsPanel;
 
     [Header("Audio (via AudioManager)")]
-    [SerializeField] private Slider volumeSlider;   // UI slider that controls music volume (0..1)
+    [SerializeField] private Slider volumeSlider;     // Music volume (0..1)
+    [SerializeField] private Slider sfxVolumeSlider;  // SFX volume (0..1)
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI highScoreText;
@@ -30,37 +28,44 @@ public class MainMenuManager : MonoBehaviour
         if (optionsPanel) optionsPanel.SetActive(false);
 
         // High score
-        int savedScore = PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0);
-        UpdateHighScoreText(savedScore);
+        UpdateHighScoreText(PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0));
 
-        // Audio: ensure global music is playing and init slider from AudioManager
-        var am = AudioManager.Instance;
-
-        // --- Force correct slider wiring & range ---
+        // Sliders: force sane config and own the listeners
         if (volumeSlider)
         {
             volumeSlider.minValue = 0f;
             volumeSlider.maxValue = 1f;
             volumeSlider.wholeNumbers = false;
-
-            // Nuke anything wired in the Inspector that might also write to it
             volumeSlider.onValueChanged.RemoveAllListeners();
-            volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
+            volumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+        }
+        if (sfxVolumeSlider)
+        {
+            sfxVolumeSlider.minValue = 0f;
+            sfxVolumeSlider.maxValue = 1f;
+            sfxVolumeSlider.wholeNumbers = false;
+            sfxVolumeSlider.onValueChanged.RemoveAllListeners();
+            sfxVolumeSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
         }
 
+        // Init from AudioManager
+        var am = AudioManager.Instance;
         if (am != null)
         {
             am.EnsureMusicPlaying();
 
-            // If AM volume is "bad" (0 because of old prefs), bump to a sane default
+            // Default away from muted prefs
             if (am.musicVolume <= 0.001f) am.SetMusicVolume(0.8f);
+            if (am.sfxVolume <= 0.001f) am.SetSfxVolume(0.8f);
 
-            if (volumeSlider)
-                volumeSlider.SetValueWithoutNotify(am.musicVolume);
+            volumeSlider?.SetValueWithoutNotify(am.musicVolume);
+            sfxVolumeSlider?.SetValueWithoutNotify(am.sfxVolume);
         }
         else
         {
-            if (volumeSlider) volumeSlider.SetValueWithoutNotify(0.8f);
+            volumeSlider?.SetValueWithoutNotify(0.8f);
+            sfxVolumeSlider?.SetValueWithoutNotify(0.8f);
+            Debug.LogWarning("[MainMenuManager] AudioManager not found in scene.");
         }
     }
 
@@ -68,12 +73,12 @@ public class MainMenuManager : MonoBehaviour
 
     public void OnStartGame()
     {
-        if (string.IsNullOrEmpty(gameplaySceneName))
+        if (string.IsNullOrEmpty("MislavTestScene"))
         {
             Debug.LogError("[MainMenuManager] gameplaySceneName is empty.");
             return;
         }
-        SceneManager.LoadScene(1);
+        SceneManager.LoadScene("MislavTestScene");
     }
 
     public void OnOpenOptions()
@@ -87,8 +92,7 @@ public class MainMenuManager : MonoBehaviour
         if (optionsPanel) optionsPanel.SetActive(false);
         if (startMenuPanel) startMenuPanel.SetActive(true);
 
-        int score = PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0);
-        UpdateHighScoreText(score);
+        UpdateHighScoreText(PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0));
     }
 
     public void OnResetHighScore()
@@ -97,22 +101,24 @@ public class MainMenuManager : MonoBehaviour
         PlayerPrefs.Save();
         UpdateHighScoreText(0);
         Debug.Log("High score reset.");
-        // Optional: AudioManager.Instance?.PlaySFX("click");
+        // Example: AudioManager.Instance?.PlaySFX("click");
     }
 
-    public void OnVolumeChanged(float value)
+    // Slider handlers
+    public void OnMusicVolumeChanged(float value)
     {
-        if (Mathf.Approximately(value, 0f))
-            Debug.LogWarning("Slider value became 0 — check other listeners/animators.");
-
         var am = AudioManager.Instance;
         if (am == null) return;
         am.SetMusicVolume(value);
-        am.EnsureMusicPlaying();
+        am.EnsureMusicPlaying(); // if something stopped it, resume
     }
 
-
-
+    public void OnSfxVolumeChanged(float value)
+    {
+        var am = AudioManager.Instance;
+        if (am == null) return;
+        am.SetSfxVolume(value); // persists; affects next SFX plays
+    }
 
     public void OnBackToMainMenu()
     {
@@ -127,7 +133,6 @@ public class MainMenuManager : MonoBehaviour
     // --- Helpers ---
     private void UpdateHighScoreText(int score)
     {
-        if (highScoreText)
-            highScoreText.text = $"High Score: {score}";
+        if (highScoreText) highScoreText.text = $"High Score: {score}";
     }
 }

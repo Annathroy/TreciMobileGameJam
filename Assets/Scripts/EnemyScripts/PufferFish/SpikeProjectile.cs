@@ -4,18 +4,20 @@ using UnityEngine;
 public class SpikeProjectile : MonoBehaviour
 {
     [Header("Flight")]
-    [SerializeField] float speed = 22f;
-    [SerializeField] float lifeTime = 3f;
-    [SerializeField] float skin = 0.02f;
+    [SerializeField] private float speed = 22f;
+    [SerializeField] private float lifeTime = 3f;
+    [SerializeField] private float skin = 0.02f;
 
     [Header("Collision")]
-    [SerializeField] float collisionGrace = 0.15f;     // ignore hits right after launch
-    [SerializeField] LayerMask hitMask = ~0;           // what the spike can hit (set in Inspector)
+    [SerializeField] private float collisionGrace = 0.15f;     // ignore hits right after launch
+    [SerializeField] private LayerMask hitMask = ~0;           // what the spike can hit
+    [SerializeField] private int damage = 1;                   // damage applied to PlayerHealth
 
-    SimplePool originPool;
-    Vector3 dir;
-    float dieAt, enableHitAt;
-    Collider[] ignoreThese; // self/puffer colliders to temporarily ignore
+    private SimplePool originPool;
+    private Vector3 dir;
+    private float dieAt;
+    private float enableHitAt;
+    private Collider[] ignoreThese; // colliders to ignore temporarily
 
     public void Launch(Vector3 position, Vector3 direction, SimplePool pool, Collider[] ignore = null)
     {
@@ -28,23 +30,30 @@ public class SpikeProjectile : MonoBehaviour
         enableHitAt = Time.time + collisionGrace;
         ignoreThese = ignore;
 
-        // If we have our own collider, ignore self vs puffer for the grace period
         var myCol = GetComponent<Collider>();
         if (myCol && ignoreThese != null)
             StartCoroutine(ReenableCollisionsSoon(myCol, ignoreThese, collisionGrace));
     }
 
-    IEnumerator ReenableCollisionsSoon(Collider mine, Collider[] others, float delay)
+    private IEnumerator ReenableCollisionsSoon(Collider mine, Collider[] others, float delay)
     {
-        foreach (var c in others) if (c) Physics.IgnoreCollision(mine, c, true);
+        foreach (var c in others)
+            if (c) Physics.IgnoreCollision(mine, c, true);
+
         yield return new WaitForSeconds(delay);
-        foreach (var c in others) if (c) Physics.IgnoreCollision(mine, c, false);
+
+        foreach (var c in others)
+            if (c) Physics.IgnoreCollision(mine, c, false);
     }
 
-    void Update()
+    private void Update()
     {
         float dt = Time.deltaTime;
-        if (Time.time >= dieAt) { ReturnToPool(); return; }
+        if (Time.time >= dieAt)
+        {
+            ReturnToPool();
+            return;
+        }
 
         Vector3 step = dir * speed * dt;
 
@@ -54,6 +63,14 @@ public class SpikeProjectile : MonoBehaviour
             if (Physics.Raycast(transform.position, dir, out var hit, step.magnitude + skin, hitMask, QueryTriggerInteraction.Ignore))
             {
                 transform.position = hit.point - dir * skin;
+
+                // Try to apply damage if target has PlayerHealth
+                var health = hit.collider.GetComponentInParent<PlayerHealth>();
+                if (health != null)
+                {
+                    health.ApplyDamage(damage);
+                }
+
                 ReturnToPool();
                 return;
             }
@@ -62,12 +79,37 @@ public class SpikeProjectile : MonoBehaviour
         transform.position += step;
     }
 
-    void OnTriggerEnter(Collider _) { if (Time.time >= enableHitAt) ReturnToPool(); }
-    void OnCollisionEnter(Collision _) { if (Time.time >= enableHitAt) ReturnToPool(); }
-
-    void ReturnToPool()
+    private void OnTriggerEnter(Collider other)
     {
-        if (originPool != null) originPool.Return(gameObject);
-        else gameObject.SetActive(false);
+        if (Time.time < enableHitAt) return;
+
+        var health = other.GetComponentInParent<PlayerHealth>();
+        if (health != null)
+        {
+            health.ApplyDamage(damage);
+        }
+
+        ReturnToPool();
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (Time.time < enableHitAt) return;
+
+        var health = collision.collider.GetComponentInParent<PlayerHealth>();
+        if (health != null)
+        {
+            health.ApplyDamage(damage);
+        }
+
+        ReturnToPool();
+    }
+
+    private void ReturnToPool()
+    {
+        if (originPool != null)
+            originPool.Return(gameObject);
+        else
+            gameObject.SetActive(false);
     }
 }
