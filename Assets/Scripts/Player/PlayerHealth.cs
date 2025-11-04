@@ -1,13 +1,14 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI; // <-- for UI hearts
 
 public class PlayerHealth : MonoBehaviour
 {
     [Header("Lives")]
-    [SerializeField] private int maxLives = 5;
-    [SerializeField] private int lives; // initialized in Awake to maxLives
+    [SerializeField] private int maxLives = 4; // hard-cap at 4
+    [SerializeField] private int lives;        // initialized in Awake to maxLives
 
     [Header("Damage Sources (by Tag)")]
     [SerializeField] private string enemyTag = "Enemy";
@@ -22,11 +23,16 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private float invulnDuration = 1.5f;
     [SerializeField] private float flashInterval = 0.08f;
 
+    [Header("UI Hearts (exactly 4)")]
+    [Tooltip("Assign 4 UI Image objects (left→right).")]
+    [SerializeField] private Image[] heartImages = new Image[4];
+
     [Header("Events")]
     public UnityEvent<int, int> onLivesChanged; // (current, max)
     public UnityEvent onDeath;
 
     // ---- internals ----
+    private const int MAX_CAP = 4;
     private bool invulnerable = false;
     private List<Renderer> renderers = new List<Renderer>();
     private List<SpriteRenderer> spriteRenderers = new List<SpriteRenderer>();
@@ -34,13 +40,15 @@ public class PlayerHealth : MonoBehaviour
 
     private void Awake()
     {
-        lives = Mathf.Max(1, maxLives);
+        // cap at 4 hearts
+        maxLives = Mathf.Clamp(maxLives, 1, MAX_CAP);
+        lives = Mathf.Clamp(maxLives, 1, MAX_CAP);
 
         // cache all renderers (supports sprites and 3D meshes)
         GetComponentsInChildren(true, renderers);
         GetComponentsInChildren(true, spriteRenderers);
 
-        // initial event fire
+        RefreshHearts();
         onLivesChanged?.Invoke(lives, maxLives);
     }
 
@@ -50,6 +58,7 @@ public class PlayerHealth : MonoBehaviour
         if (amount <= 0 || invulnerable || lives <= 0) return;
 
         lives = Mathf.Max(0, lives - amount);
+        RefreshHearts();
         onLivesChanged?.Invoke(lives, maxLives);
 
         if (lives <= 0)
@@ -62,29 +71,20 @@ public class PlayerHealth : MonoBehaviour
         if (invulnRoutine != null) StopCoroutine(invulnRoutine);
         invulnRoutine = StartCoroutine(InvulnerabilityFlash(invulnDuration, flashInterval));
     }
+
     public void GrantInvulnerability(float seconds)
     {
         if (seconds <= 0f || lives <= 0) return;
-
-        // restart the same flashing coroutine you already use on damage
         if (invulnRoutine != null) StopCoroutine(invulnRoutine);
         invulnRoutine = StartCoroutine(InvulnerabilityFlash(seconds, flashInterval));
     }
 
-
     private void Die()
     {
-        // stop flashing if running
         if (invulnRoutine != null) StopCoroutine(invulnRoutine);
         SetVisible(true);
-
         onDeath?.Invoke();
-
-        // Disable player controls/attack here if needed
-        // e.g., GetComponent<PlayerAttack>()?.enabled = false;
-
-        // Optional: Destroy(gameObject);
-        // Leave it to you to handle respawn / game over.
+        // Optional: disable controls, play animation, etc.
     }
 
     // ---- collision handling (3D) ----
@@ -145,13 +145,25 @@ public class PlayerHealth : MonoBehaviour
     {
         // For Mesh/SkinnedMesh renderers
         for (int i = 0; i < renderers.Count; i++)
-        {
             if (renderers[i] != null) renderers[i].enabled = on;
-        }
+
         // For SpriteRenderers (2D in 3D projects)
         for (int i = 0; i < spriteRenderers.Count; i++)
-        {
             if (spriteRenderers[i] != null) spriteRenderers[i].enabled = on;
+    }
+
+    // ---- Hearts UI ----
+    private void RefreshHearts()
+    {
+        // Safety: ensure array length is 4; nulls are tolerated
+        int clampedLives = Mathf.Clamp(lives, 0, MAX_CAP);
+        for (int i = 0; i < MAX_CAP; i++)
+        {
+            var img = (heartImages != null && i < heartImages.Length) ? heartImages[i] : null;
+            if (img == null) continue;
+
+            // Toggle enabled for performance; or use img.gameObject.SetActive(...)
+            img.enabled = (i < clampedLives);
         }
     }
 
@@ -160,22 +172,44 @@ public class PlayerHealth : MonoBehaviour
     {
         if (amount <= 0 || lives <= 0) return;
         int prev = lives;
-        lives = Mathf.Clamp(lives + amount, 0, maxLives);
-        if (lives != prev) onLivesChanged?.Invoke(lives, maxLives);
+        lives = Mathf.Clamp(lives + amount, 0, MAX_CAP);
+        if (lives != prev)
+        {
+            RefreshHearts();
+            onLivesChanged?.Invoke(lives, maxLives);
+        }
+    }
+
+    public void SetLives(int value)
+    {
+        int prev = lives;
+        lives = Mathf.Clamp(value, 0, MAX_CAP);
+        if (lives != prev)
+        {
+            RefreshHearts();
+            onLivesChanged?.Invoke(lives, maxLives);
+        }
     }
 
     public int CurrentLives => lives;
     public int MaxLives => maxLives;
 
 #if UNITY_EDITOR
+    private void OnValidate()
+    {
+        // keep caps in editor too
+        maxLives = Mathf.Clamp(maxLives, 1, MAX_CAP);
+        if (lives > 0) lives = Mathf.Clamp(lives, 0, MAX_CAP);
+
+        // warn if hearts not assigned
+        if (heartImages == null || heartImages.Length < MAX_CAP)
+            Debug.LogWarning("[PlayerHealth] Assign 4 heart Images (left→right) in the Inspector.");
+    }
+
     private void Reset()
     {
-        // If you add this to the Player, auto-tag suggestion
         if (!CompareTag("Player"))
-        {
-            Debug.LogWarning("[PlayerHealth] Consider tagging this GameObject as 'Player' for consistency.");
-        }
+            Debug.LogWarning("[PlayerHealth] Consider tagging this GameObject as 'Player'.");
     }
 #endif
 }
-
