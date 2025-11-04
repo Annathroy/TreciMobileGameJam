@@ -754,6 +754,43 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
+--- !u!1 &934476293 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1195409079784278932, guid: 6b9e7304bea25fe4e9e7064615ccab12, type: 3}
+  m_PrefabInstance: {fileID: 6044884595327183142}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &934476301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 934476293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e522621fa56ee5c44bdc38b3d2853e08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
+  maxLives: 4
+  lives: 0
+  enemyTag: Enemy
+  enemyProjectileTag: EnemyProjectile
+  damageFromEnemy: 1
+  damageFromProjectile: 1
+  destroyProjectileOnHit: 1
+  invulnDuration: 1.5
+  flashInterval: 0.08
+  heartImages:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  onLivesChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &968818512
 GameObject:
   m_ObjectHideFlags: 0
@@ -1211,6 +1248,64 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1594073291
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1594073293}
+  - component: {fileID: 1594073292}
+  m_Layer: 0
+  m_Name: EnemyBeamEncounter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1594073292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1594073291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9860316f86b38c6469c2d52b9cbf390b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBeamEncounter
+  enemyPrefab: {fileID: 4806521676850534501, guid: 6a4d0d157134bc947ab3a013568e9e1d, type: 3}
+  beamPrefab: {fileID: 7688856178559059834, guid: 5b0c0839aa6090544aa0b79095696f9c, type: 3}
+  cam: {fileID: 877093960}
+  groundY: 0
+  edgeInset: 0.15
+  spawnZ: -6
+  targetZRange: {x: 2, y: 6}
+  minSeparation: 2
+  beamDuration: 2.5
+  postBeamPause: 0.6
+  useFixedXFromCenter: 1
+  fixedX: 3
+  infiniteLoop: 1
+  rounds: 3
+--- !u!4 &1594073293
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1594073291}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1835183991
 GameObject:
   m_ObjectHideFlags: 0
@@ -1503,7 +1598,7 @@ MonoBehaviour:
   refreshOnPickup: 1
   independentStackTimers: 0
   slot: 0
-  perPickupMultiplier: 0.5
+  perPickupMultiplier: 0.1
 --- !u!4 &1922106263
 Transform:
   m_ObjectHideFlags: 0
@@ -1666,7 +1761,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1195409079784278932, guid: 6b9e7304bea25fe4e9e7064615ccab12, type: 3}
+      insertIndex: 1
+      addedObject: {fileID: 934476301}
   m_SourcePrefab: {fileID: 100100000, guid: 6b9e7304bea25fe4e9e7064615ccab12, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
@@ -1687,3 +1785,4 @@ SceneRoots:
   - {fileID: 537808043}
   - {fileID: 1139594447}
   - {fileID: 1835183994}
+  - {fileID: 1594073293}

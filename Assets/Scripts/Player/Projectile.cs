@@ -1,27 +1,65 @@
 using UnityEngine;
 
+[DisallowMultipleComponent]
 public class Projectile : MonoBehaviour
 {
+    [Header("Movement")]
     [SerializeField] private float speed = 10f;
     [SerializeField] private float lifetime = 2f;
 
-    private float timeAlive;
+    [Header("Damage")]
+    [SerializeField] private int damage = 1;
+    [SerializeField] private bool destroyOnHit = true;
+    [SerializeField] private string enemyTag = "Enemy";
 
-    private void OnEnable()
+    [Header("FX")]
+    [SerializeField] private GameObject hitVFX;
+    [SerializeField] private AudioClip hitSFX;
+    [SerializeField] private float hitSFXVolume = 1f;
+
+    public int Damage => damage;
+    public bool DestroyOnHit => destroyOnHit;
+
+    float timeAlive;
+    Transform tf;
+
+    void Awake() { tf = transform; }
+
+    void OnEnable() { timeAlive = 0f; }
+
+    void Update()
     {
-        timeAlive = 0f;
+        tf.position += tf.forward * speed * Time.deltaTime;
+
+        timeAlive += Time.deltaTime;
+        if (timeAlive >= lifetime) Despawn();
     }
 
-    private void Update()
+    void OnTriggerEnter(Collider other)
     {
-        // Move the projectile in the direction it is facing
-        transform.position += transform.forward * speed * Time.deltaTime;
+        if (!other.CompareTag(enemyTag)) return;
 
-        // Track the time the projectile has been alive
-
-        if (timeAlive >= lifetime)
+        var health = other.GetComponent<EnemyHealth>() ?? other.GetComponentInParent<EnemyHealth>();
+        if (health != null)
         {
-            gameObject.SetActive(false);
+            health.ApplyDamage(damage);
+
+            if (hitVFX)
+            {
+                var vfx = Instantiate(hitVFX, tf.position, Quaternion.identity);
+                Destroy(vfx, 2f);
+            }
+            if (hitSFX)
+                AudioSource.PlayClipAtPoint(hitSFX, tf.position, hitSFXVolume);
+
+            if (destroyOnHit) Despawn();
         }
+    }
+
+    public void ForceDespawn() => Despawn();
+
+    void Despawn()
+    {
+        gameObject.SetActive(false); // pool-friendly
     }
 }
