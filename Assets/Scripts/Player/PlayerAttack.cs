@@ -34,9 +34,11 @@ public class PlayerAttack : MonoBehaviour
 
     private void Shoot()
     {
+        // play shooting SFX once per attack
+        AudioManager.Instance?.PlaySFX("shot");
+
         for (int i = 0; i < bulletLines; i++)
         {
-            // horizontal spread for multiple barrels on X
             float xOffset = (i - (bulletLines - 1) / 2f) * 0.4f;
             Vector3 spawnPos = firePoint.position + Vector3.right * xOffset;
 
@@ -45,9 +47,8 @@ public class PlayerAttack : MonoBehaviour
                 var bomb = bombPool.GetObject();
                 bomb.transform.SetPositionAndRotation(spawnPos, firePoint.rotation);
             }
-            else if (eightWay) // NEW
+            else if (eightWay)
             {
-                // Fire 8 directions around Y axis (0..315 step 45)
                 for (int k = 0; k < 8; k++)
                 {
                     float angle = k * 45f;
@@ -76,6 +77,7 @@ public class PlayerAttack : MonoBehaviour
             }
         }
     }
+
 
     // ---- setters ----
     public void SetEightWay(bool on) => eightWay = on;  // NEW

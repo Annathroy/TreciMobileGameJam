@@ -138,10 +138,21 @@ public class AudioManager : MonoBehaviour
     public void SetMusicVolume(float v)
     {
         musicVolume = Mathf.Clamp01(v);
-        PlayerPrefs.SetFloat(PP_MusicVol, musicVolume);
+
+        // Persist
+        PlayerPrefs.SetFloat("Audio.MusicVol", musicVolume);
         PlayerPrefs.Save();
-        if (_music != null) _music.volume = musicVolume;
+
+        if (_music != null)
+        {
+            _music.volume = musicVolume;
+
+            // If something stopped playback, auto-recover when volume > 0
+            if (_music.clip != null && !_music.isPlaying && musicVolume > 0f)
+                _music.Play();
+        }
     }
+
 
     /// <summary>Set SFX volume [0..1] and persist.</summary>
     public void SetSfxVolume(float v)

@@ -284,11 +284,16 @@ MonoBehaviour:
   musicMixer: {fileID: 0}
   sfxMixer: {fileID: 0}
   musicClip: {fileID: 8300000, guid: d9e82d766912088429cf828b6e154e6c, type: 3}
-  musicVolume: 0.8
+  musicVolume: 1
   autoPlayOnStart: 1
   sfxVolume: 1
   sfxPoolSize: 10
-  sfx: []
+  sfx:
+  - id: shot
+    clip: {fileID: 8300000, guid: ffa40e5a122cd69459d3a87c9f7b8347, type: 3}
+    baseVolume: 1
+    pitchMin: 0.9
+    pitchMax: 1.1
 --- !u!4 &131718002
 Transform:
   m_ObjectHideFlags: 0
@@ -1886,10 +1891,10 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1701688320}
-        m_TargetAssemblyTypeName: UnityEngine.UI.Slider, UnityEngine.UI
-        m_MethodName: set_value
-        m_Mode: 0
+      - m_Target: {fileID: 249553763}
+        m_TargetAssemblyTypeName: MainMenuManager, Assembly-CSharp
+        m_MethodName: OnVolumeChanged
+        m_Mode: 4
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine

@@ -33,19 +33,32 @@ public class MainMenuManager : MonoBehaviour
 
         // Audio: ensure global music is playing and init slider from AudioManager
         var am = AudioManager.Instance;
+
+        // --- Force correct slider wiring & range ---
+        if (volumeSlider)
+        {
+            volumeSlider.minValue = 0f;
+            volumeSlider.maxValue = 1f;
+            volumeSlider.wholeNumbers = false;
+
+            // Nuke anything wired in the Inspector that might also write to it
+            volumeSlider.onValueChanged.RemoveAllListeners();
+            volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
+        }
+
         if (am != null)
         {
             am.EnsureMusicPlaying();
 
-            // Initialize slider without triggering OnValueChanged
+            // If AM volume is "bad" (0 because of old prefs), bump to a sane default
+            if (am.musicVolume <= 0.001f) am.SetMusicVolume(0.8f);
+
             if (volumeSlider)
-                volumeSlider.SetValueWithoutNotify(am != null ? am.musicVolume : 1f);
+                volumeSlider.SetValueWithoutNotify(am.musicVolume);
         }
         else
         {
-            Debug.LogWarning("[MainMenuManager] AudioManager missing in the scene. " +
-                             "Place it in the first loaded scene (DontDestroyOnLoad).");
-            if (volumeSlider) volumeSlider.SetValueWithoutNotify(1f);
+            if (volumeSlider) volumeSlider.SetValueWithoutNotify(0.8f);
         }
     }
 
@@ -58,7 +71,7 @@ public class MainMenuManager : MonoBehaviour
             Debug.LogError("[MainMenuManager] gameplaySceneName is empty.");
             return;
         }
-        SceneManager.LoadScene(gameplaySceneName);
+        SceneManager.LoadScene(1);
     }
 
     public void OnOpenOptions()
@@ -87,16 +100,17 @@ public class MainMenuManager : MonoBehaviour
 
     public void OnVolumeChanged(float value)
     {
+        if (Mathf.Approximately(value, 0f))
+            Debug.LogWarning("Slider value became 0 — check other listeners/animators.");
+
         var am = AudioManager.Instance;
-        if (am != null)
-        {
-            am.SetMusicVolume(value);           // persists internally (PlayerPrefs)
-        }
-        else
-        {
-            Debug.LogWarning("[MainMenuManager] AudioManager not found; volume change ignored.");
-        }
+        if (am == null) return;
+        am.SetMusicVolume(value);
+        am.EnsureMusicPlaying();
     }
+
+
+
 
     public void OnBackToMainMenu()
     {
