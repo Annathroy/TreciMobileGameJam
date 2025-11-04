@@ -152,7 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4afc455c8b53f94da6d5a168a162c7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpikeProjectile
-  speed: 7.5
+  speed: 5
   lifeTime: 8
   skin: 0.02
   collisionGrace: 0.15

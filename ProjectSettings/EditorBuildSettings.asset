@@ -11,5 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MislavTestScene.unity
     guid: 63b18b97d7517494a827e11cafaf4281
-  m_configObjects: {}
+  m_configObjects:
+    com.unity.adaptiveperformance.google.android.provider_settings: {fileID: 11400000, guid: 111ac34274902d54d9259eff5f487ea5, type: 2}
+    com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: f7ff6b078e7fda74584471e39933e347, type: 2}
+    com.unity.adaptiveperformance.samsung.android.provider_settings: {fileID: 11400000, guid: b75ef6cee0a5ff04799a078295b553f3, type: 2}
+    com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 4e6fad80a7ef9774384f470dd46f6bb5, type: 2}
   m_UseUCBPForAssetBundles: 0

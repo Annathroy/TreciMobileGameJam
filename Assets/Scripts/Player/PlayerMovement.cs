@@ -1,57 +1,55 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 10f; // Increased for more responsiveness
-    [SerializeField] private float maxDelta = 1f; // Maximum movement delta to prevent excessive speed
+    [Header("Refs")]
+    [SerializeField] private FloatingJoystick joystick;
+    [SerializeField] private Transform body;
+    [SerializeField] private Rigidbody rb;
+    [SerializeField] private Camera cam; // assign Main Camera
 
-    private Rigidbody rb; // Reference to the Rigidbody component
-    private Camera mainCamera; // Reference to the main camera
-    private bool isTouching = false; // Tracks if the screen is being touched
-    private Vector2 previousTouchPosition; // Stores the previous touch position
+    [Header("Movement")]
+    [SerializeField] private float moveSpeed = 10f;
 
-    private void Awake()
+    [Header("Bank")]
+    [SerializeField] private float maxBankDeg = 35f;
+    [SerializeField] private float bankPerUnitSpeed = 3f;
+    [SerializeField] private float bankLerp = 10f;
+
+    float lastPosX, currentBankDeg;
+
+    void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        rb.interpolation = RigidbodyInterpolation.Interpolate; // Smooth movement
-        mainCamera = Camera.main;
+        if (!rb) rb = GetComponent<Rigidbody>();
+        if (!body) body = transform;
+        if (!cam) cam = Camera.main;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        lastPosX = rb.position.x;
     }
 
-    // This method is invoked by the Input System when the "Touch" action is triggered
-    public void OnTouch(InputAction.CallbackContext context)
+    void FixedUpdate()
     {
-        if (context.started)
-        {
-            isTouching = true;
-            previousTouchPosition = Pointer.current.position.ReadValue(); // Initialize the previous touch position
-        }
-        else if (context.canceled)
-        {
-            isTouching = false;
-        }
+        Vector2 in2 = joystick ? joystick.InputVector : Vector2.zero;
+
+        Vector3 forward = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up).normalized;
+        if (forward.sqrMagnitude < 1e-4f) forward = Vector3.forward;
+        Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+
+        Vector3 moveDir = (right * in2.x + forward * in2.y).normalized;
+        rb.linearVelocity = moveDir * (moveSpeed * in2.magnitude); // preserves analog magnitude
     }
 
-    // This method is invoked by the Input System to update the touch position
-    public void OnTouchPosition(InputAction.CallbackContext context)
+
+    void LateUpdate()
     {
-        if (isTouching && context.performed)
-        {
-            Vector2 currentTouchPosition = context.ReadValue<Vector2>();
-            Vector2 delta = currentTouchPosition - previousTouchPosition; // Calculate the drag delta
+        float dt = Mathf.Max(Time.deltaTime, 0.0001f);
+        float xSpeed = (rb.position.x - lastPosX) / dt; lastPosX = rb.position.x;
 
-            // Convert the delta to world space and apply it to the player's position
-            Vector3 worldDelta = mainCamera.ScreenToWorldPoint(new Vector3(delta.x, delta.y, mainCamera.WorldToScreenPoint(transform.position).z)) 
-                                 - mainCamera.ScreenToWorldPoint(new Vector3(0, 0, mainCamera.WorldToScreenPoint(transform.position).z));
+        float targetBank = Mathf.Clamp(-xSpeed * bankPerUnitSpeed, -maxBankDeg, maxBankDeg);
+        float t = 1f - Mathf.Exp(-bankLerp * dt);
+        currentBankDeg = Mathf.Lerp(currentBankDeg, targetBank, t);
 
-            // Clamp the world delta to prevent excessive movement
-            worldDelta = Vector3.ClampMagnitude(worldDelta, maxDelta);
-
-            // Apply movement directly
-            rb.MovePosition(transform.position + worldDelta * moveSpeed);
-
-            previousTouchPosition = currentTouchPosition; // Update the previous touch position
-        }
+        var e = body.localEulerAngles;
+        body.localRotation = Quaternion.Euler(e.x, e.y, currentBankDeg);
     }
 }
