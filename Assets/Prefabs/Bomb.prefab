@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 2642416245476001170}
   m_Layer: 0
   m_Name: Bomb
-  m_TagString: Untagged
+  m_TagString: Projectile
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -126,3 +126,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
   speed: 10
   lifetime: 2
+  damage: 1
+  destroyOnHit: 1
+  enemyTag: Enemy
+  hitVFX: {fileID: 0}
+  hitSFX: {fileID: 0}
+  hitSFXVolume: 1

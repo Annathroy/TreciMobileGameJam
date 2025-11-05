@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 3610116559051201608}
   - component: {fileID: 8757018895201777576}
   - component: {fileID: 2642416245476001170}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Bullet
-  m_TagString: Untagged
+  m_TagString: Projectile
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -128,7 +128,7 @@ MonoBehaviour:
   lifetime: 2
   damage: 1
   destroyOnHit: 1
-  enemyTag: Enemy
+  applyDamageOnTrigger: 0
   hitVFX: {fileID: 0}
   hitSFX: {fileID: 0}
   hitSFXVolume: 1
