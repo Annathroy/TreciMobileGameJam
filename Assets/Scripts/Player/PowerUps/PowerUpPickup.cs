@@ -20,6 +20,7 @@ public class PowerUpPickup : MonoBehaviour
     [SerializeField] private bool enablePulseAnimation = true;
     [SerializeField] private float pulseSpeed = 2f;
     [SerializeField] private float pulseIntensity = 0.2f;
+    [SerializeField] [Range(0f, 1f)] private float transparency = 0.5f; // New transparency control
 
     private float lifetime;
     private Camera cam;
@@ -58,15 +59,42 @@ public class PowerUpPickup : MonoBehaviour
         // Setup material and renderer
         spriteRenderer = spriteQuad.GetComponent<MeshRenderer>();
         
-        // Try to find an appropriate shader (URP Unlit preferred)
+        // Try to find an appropriate shader with transparency support
         Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit");
-        if (!unlitShader) unlitShader = Shader.Find("Unlit/Texture");
+        if (!unlitShader) unlitShader = Shader.Find("Unlit/Transparent");
         if (!unlitShader) unlitShader = Shader.Find("Sprites/Default");
         
-        spriteMaterial = new Material(unlitShader)
+        spriteMaterial = new Material(unlitShader);
+        
+        // Enable transparency in material
+        if (spriteMaterial.HasProperty("_Surface"))
         {
-            color = spriteTint
-        };
+            spriteMaterial.SetFloat("_Surface", 1); // Transparent surface type for URP
+        }
+        if (spriteMaterial.HasProperty("_Blend"))
+        {
+            spriteMaterial.SetFloat("_Blend", 0); // Alpha blending
+        }
+        if (spriteMaterial.HasProperty("_SrcBlend"))
+        {
+            spriteMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        }
+        if (spriteMaterial.HasProperty("_DstBlend"))
+        {
+            spriteMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        }
+        if (spriteMaterial.HasProperty("_ZWrite"))
+        {
+            spriteMaterial.SetFloat("_ZWrite", 0);
+        }
+        
+        // Set render queue for transparency
+        spriteMaterial.renderQueue = 3000; // Transparent render queue
+        
+        // Apply tint with transparency
+        Color transparentTint = spriteTint;
+        transparentTint.a = transparency;
+        spriteMaterial.color = transparentTint;
         
         spriteRenderer.material = spriteMaterial;
         spriteRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -88,9 +116,15 @@ public class PowerUpPickup : MonoBehaviour
             // Apply texture using MaterialPropertyBlock (more efficient)
             materialPropertyBlock.SetTexture("_BaseMap", texture); // URP Unlit
             materialPropertyBlock.SetTexture("_MainTex", texture);  // Built-in fallback
+            
+            // Apply transparency to the color property
+            Color transparentTint = spriteTint;
+            transparentTint.a = transparency;
+            materialPropertyBlock.SetColor("_BaseColor", transparentTint); // URP
+            materialPropertyBlock.SetColor("_Color", transparentTint);     // Built-in fallback
+            
             spriteRenderer.SetPropertyBlock(materialPropertyBlock);
         }
-       
     }
 
     private void Update()
@@ -174,6 +208,13 @@ public class PowerUpPickup : MonoBehaviour
         {
             materialPropertyBlock.SetTexture("_BaseMap", texture);
             materialPropertyBlock.SetTexture("_MainTex", texture);
+            
+            // Maintain transparency when setting custom texture
+            Color transparentTint = spriteTint;
+            transparentTint.a = transparency;
+            materialPropertyBlock.SetColor("_BaseColor", transparentTint);
+            materialPropertyBlock.SetColor("_Color", transparentTint);
+            
             spriteRenderer.SetPropertyBlock(materialPropertyBlock);
         }
     }
@@ -192,7 +233,22 @@ public class PowerUpPickup : MonoBehaviour
         
         if (spriteMaterial != null)
         {
-            spriteMaterial.color = spriteTint;
+            Color transparentTint = spriteTint;
+            transparentTint.a = transparency;
+            spriteMaterial.color = transparentTint;
+        }
+    }
+
+    // New helper method to change transparency at runtime
+    public void SetTransparency(float newTransparency)
+    {
+        transparency = Mathf.Clamp01(newTransparency);
+        
+        if (spriteMaterial != null)
+        {
+            Color transparentTint = spriteTint;
+            transparentTint.a = transparency;
+            spriteMaterial.color = transparentTint;
         }
     }
 }
