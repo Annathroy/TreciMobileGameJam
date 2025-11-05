@@ -199,6 +199,6 @@ public class MainMenuManager : MonoBehaviour
     // --- Helpers ---
     private void UpdateHighScoreText(int score)
     {
-        if (highScoreText) highScoreText.text = $"High Score: {score}";
+        if (highScoreText) highScoreText.text = $"{score}";
     }
 }
