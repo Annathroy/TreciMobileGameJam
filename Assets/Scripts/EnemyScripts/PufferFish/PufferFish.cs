@@ -16,6 +16,12 @@ public class PufferFish : MonoBehaviour
     [SerializeField] private float moveSpeed = 7f;
     [SerializeField] private float moveDelay = 0.5f;
     [SerializeField] private int maxJumps = 6;
+    [SerializeField] private bool flipModelForward = true; // NEW: option to flip model 180 degrees
+
+    [Header("Animation")]
+    [SerializeField] private string attackBoolParameter = "isAttacking";
+    [SerializeField] private string attackTriggerParameter = "spikes_out";
+    [SerializeField] private bool useAttackTrigger = true; // Use trigger instead of bool
 
     [Header("Exit / Despawn")]
     [SerializeField] private float runOutSpeed = 10f;
@@ -28,6 +34,7 @@ public class PufferFish : MonoBehaviour
     private PufferWaypointManager mgr;
     private int currentIndex = -1;
     private bool running = false;
+    private Animator animator;
 
     void Awake()
     {
@@ -38,6 +45,10 @@ public class PufferFish : MonoBehaviour
 
         if (!spikePool)
             Debug.LogError("NO SPIKE POOL ATTACHED");
+
+        animator = GetComponent<Animator>();
+        if (!animator)
+            Debug.LogWarning("[PufferFish] No Animator component found - animation parameters will not be set");
     }
 
     void OnEnable()
@@ -45,6 +56,13 @@ public class PufferFish : MonoBehaviour
         // lock scale & plane
         transform.localScale = baseScale;
         cam = Camera.main;
+
+        // Reset animation parameters when enabled
+        if (animator)
+        {
+            if (!string.IsNullOrEmpty(attackBoolParameter))
+                animator.SetBool(attackBoolParameter, false);
+        }
 
         // TELEPORT OFF-SCREEN IMMEDIATELY (before first render)
         if (cam)
@@ -76,6 +94,10 @@ public class PufferFish : MonoBehaviour
             currentIndex = -1;
         }
         running = false;
+        
+        // Reset animation parameters when disabled
+        if (animator && !string.IsNullOrEmpty(attackBoolParameter))
+            animator.SetBool(attackBoolParameter, false);
     }
 
     IEnumerator MainRoutine()
@@ -118,8 +140,11 @@ public class PufferFish : MonoBehaviour
         {
             Vector3 dir = (targetPos - transform.position).normalized;
             transform.position += dir * moveSpeed * Time.deltaTime;
+
+            // Fix rotation - if model faces backwards, flip it 180 degrees
+            Vector3 lookDir = flipModelForward ? -dir : dir;
             transform.rotation = Quaternion.Slerp(transform.rotation,
-                Quaternion.LookRotation(dir, Vector3.up), 10f * Time.deltaTime);
+                Quaternion.LookRotation(lookDir, Vector3.up), 10f * Time.deltaTime);
             yield return null;
         }
     }
@@ -127,9 +152,47 @@ public class PufferFish : MonoBehaviour
     IEnumerator InflateShootDeflate()
     {
         yield return TweenScale(baseScale, baseScale * inflateScaleMultiplier, inflateTime);
+        
+        // Trigger attack animation
+        TriggerAttackAnimation();
+        
         FireOneWave();
         yield return new WaitForSeconds(inflatedDuration);
+        
+        // End attack animation
+        EndAttackAnimation();
+        
         yield return TweenScale(transform.localScale, baseScale, deflateTime);
+    }
+
+    private void TriggerAttackAnimation()
+    {
+        if (!animator) return;
+
+        if (useAttackTrigger && !string.IsNullOrEmpty(attackTriggerParameter))
+        {
+            // Use trigger parameter (preferred for one-shot animations)
+            animator.SetTrigger(attackTriggerParameter);
+            Debug.Log($"[PufferFish] Triggering animation: {attackTriggerParameter}");
+        }
+        else if (!string.IsNullOrEmpty(attackBoolParameter))
+        {
+            // Use bool parameter as fallback
+            animator.SetBool(attackBoolParameter, true);
+            Debug.Log($"[PufferFish] Setting bool parameter: {attackBoolParameter} = true");
+        }
+    }
+
+    private void EndAttackAnimation()
+    {
+        if (!animator) return;
+
+        // Only reset bool parameters (triggers reset automatically)
+        if (!useAttackTrigger && !string.IsNullOrEmpty(attackBoolParameter))
+        {
+            animator.SetBool(attackBoolParameter, false);
+            Debug.Log($"[PufferFish] Setting bool parameter: {attackBoolParameter} = false");
+        }
     }
 
     IEnumerator RunOffscreenThenDespawn()
@@ -146,9 +209,13 @@ public class PufferFish : MonoBehaviour
         {
             dir = (exit - transform.position);
             if (dir.sqrMagnitude < 0.05f * 0.05f) break;
-            transform.position += dir.normalized * runOutSpeed * Time.deltaTime;
+            Vector3 moveDir = dir.normalized;
+            transform.position += moveDir * runOutSpeed * Time.deltaTime;
+
+            // Fix rotation for exit movement too
+            Vector3 lookDir = flipModelForward ? -moveDir : moveDir;
             transform.rotation = Quaternion.Slerp(transform.rotation,
-                Quaternion.LookRotation(dir.normalized, Vector3.up), 8f * Time.deltaTime);
+                Quaternion.LookRotation(lookDir, Vector3.up), 8f * Time.deltaTime);
             elapsed += Time.deltaTime;
             yield return null;
         }
