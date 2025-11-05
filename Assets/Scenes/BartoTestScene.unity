@@ -1353,7 +1353,7 @@ MonoBehaviour:
   cam: {fileID: 877093960}
   planeDistance: 100
   sequence:
-  - {fileID: 2800000, guid: 1f1d5442693a37144995dfc9b2101f8d, type: 3}
+  - {fileID: 0}
   randomizeOnWrap: 0
   unlitShader: {fileID: 0}
   tileWorldSize: {x: 9, y: 16}
