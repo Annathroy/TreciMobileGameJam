@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 3946978885260584899}
   - component: {fileID: 7485582600573433464}
   - component: {fileID: 82894338560234158}
-  - component: {fileID: 5034851729747687885}
   - component: {fileID: 4806521676850534501}
+  - component: {fileID: 5034851729747687885}
   - component: {fileID: 6627252807637144821}
   - component: {fileID: 9156497557651371389}
   m_Layer: 0
@@ -93,6 +93,20 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4806521676850534501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8064797650184500287}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1aa0f6522b9e03240b44d8e1b9ecc965, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyUnit
+  speed: 3.5
+  arriveEpsilon: 0.1
 --- !u!135 &5034851729747687885
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -108,26 +122,12 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4806521676850534501
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8064797650184500287}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1aa0f6522b9e03240b44d8e1b9ecc965, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyUnit
-  speed: 3.5
-  arriveEpsilon: 0.1
 --- !u!114 &6627252807637144821
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -144,6 +144,7 @@ MonoBehaviour:
   hp: 0
   acceptProjectileTriggers: 1
   acceptProjectileCollisions: 1
+  enableDebugLogs: 0
   invulnDuration: 0.1
   flashInterval: 0.06
   destroyOnDeath: 0

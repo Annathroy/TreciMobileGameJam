@@ -16,6 +16,9 @@ public class EnemyHealth : MonoBehaviour
     [Tooltip("If on, enemy will also read damage from collisions (non-trigger).")]
     [SerializeField] private bool acceptProjectileCollisions = false;
 
+    [Header("Debug")]
+    [SerializeField] private bool enableDebugLogs = false;
+
     [Header("Invulnerability")]
     [SerializeField] private float invulnDuration = 0.1f;
     [SerializeField] private float flashInterval = 0.06f;
@@ -40,12 +43,18 @@ public class EnemyHealth : MonoBehaviour
         hp = Mathf.Max(1, maxHP);
         GetComponentsInChildren(true, renderers);
         onHealthChanged?.Invoke(hp, maxHP);
+
+        if (enableDebugLogs)
+            Debug.Log($"[EnemyHealth] {gameObject.name} initialized with {hp}/{maxHP} HP");
     }
 
     // ---------- Public API ----------
     public void ApplyDamage(int amount)
     {
         if (amount <= 0 || invulnerable || hp <= 0) return;
+
+        if (enableDebugLogs)
+            Debug.Log($"[EnemyHealth] {gameObject.name} taking {amount} damage. HP: {hp} -> {hp - amount}");
 
         hp = Mathf.Max(0, hp - amount);
         onHealthChanged?.Invoke(hp, maxHP);
@@ -77,10 +86,26 @@ public class EnemyHealth : MonoBehaviour
     // ---------- Optional automatic intake from Projectile ----------
     void OnTriggerEnter(Collider other)
     {
-        if (!acceptProjectileTriggers || hp <= 0) return;
+        if (enableDebugLogs)
+            Debug.Log($"[EnemyHealth] {gameObject.name} trigger entered by: {other.name} (Tag: {other.tag})");
+
+        if (!acceptProjectileTriggers || hp <= 0) 
+        {
+            if (enableDebugLogs)
+                Debug.Log($"[EnemyHealth] Ignoring trigger - acceptProjectileTriggers: {acceptProjectileTriggers}, hp: {hp}");
+            return;
+        }
 
         var proj = other.GetComponent<Projectile>() ?? other.GetComponentInParent<Projectile>();
-        if (proj == null) return;
+        if (proj == null) 
+        {
+            if (enableDebugLogs)
+                Debug.Log($"[EnemyHealth] No Projectile component found on {other.name}");
+            return;
+        }
+
+        if (enableDebugLogs)
+            Debug.Log($"[EnemyHealth] Found projectile with damage: {proj.Damage}, destroyOnHit: {proj.DestroyOnHit}");
 
         ApplyDamage(proj.Damage);
         if (proj.DestroyOnHit) proj.ForceDespawn();
@@ -88,11 +113,24 @@ public class EnemyHealth : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (!acceptProjectileCollisions || hp <= 0) return;
+        if (enableDebugLogs)
+            Debug.Log($"[EnemyHealth] {gameObject.name} collision with: {collision.gameObject.name}");
+
+        if (!acceptProjectileCollisions || hp <= 0) 
+        {
+            if (enableDebugLogs)
+                Debug.Log($"[EnemyHealth] Ignoring collision - acceptProjectileCollisions: {acceptProjectileCollisions}, hp: {hp}");
+            return;
+        }
 
         var proj = collision.collider.GetComponent<Projectile>() ??
                    collision.collider.GetComponentInParent<Projectile>();
-        if (proj == null) return;
+        if (proj == null) 
+        {
+            if (enableDebugLogs)
+                Debug.Log($"[EnemyHealth] No Projectile component found on {collision.gameObject.name}");
+            return;
+        }
 
         ApplyDamage(proj.Damage);
         if (proj.DestroyOnHit) proj.ForceDespawn();
@@ -101,6 +139,9 @@ public class EnemyHealth : MonoBehaviour
     // ---------- Death ----------
     void Die()
     {
+        if (enableDebugLogs)
+            Debug.Log($"[EnemyHealth] {gameObject.name} died!");
+
         if (invulnCo != null) StopCoroutine(invulnCo);
         SetVisible(true);
         onDeath?.Invoke();
@@ -151,6 +192,19 @@ public class EnemyHealth : MonoBehaviour
         flashInterval = Mathf.Max(0.01f, flashInterval);
         invulnDuration = Mathf.Max(0f, invulnDuration);
         destroyDelay = Mathf.Max(0f, destroyDelay);
+    }
+
+    void Reset()
+    {
+        // Set reasonable defaults when component is added
+        maxHP = 5;
+        hp = maxHP;
+        acceptProjectileTriggers = true;
+        acceptProjectileCollisions = false;
+        invulnDuration = 0.1f;
+        flashInterval = 0.06f;
+        destroyOnDeath = false;
+        enableDebugLogs = false;
     }
 #endif
 }

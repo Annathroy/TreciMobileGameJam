@@ -205,8 +205,10 @@ GameObject:
   - component: {fileID: 2193784193462202606}
   - component: {fileID: 1198752630736837500}
   - component: {fileID: 673862478983963295}
+  - component: {fileID: 6433360941945584135}
   - component: {fileID: 3562361458165798966}
   - component: {fileID: 124202615307072629}
+  - component: {fileID: -4903366528934686901}
   m_Layer: 0
   m_Name: PufferFish
   m_TagString: Enemy
@@ -224,7 +226,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.64, y: 0.64, z: 0.64}
+  m_LocalScale: {x: 0.34, y: 0.34, z: 0.34}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 718033286128065560}
@@ -275,7 +277,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
@@ -283,6 +285,40 @@ CapsuleCollider:
   m_Height: 3.68
   m_Direction: 2
   m_Center: {x: 0, y: 0, z: -0.2}
+--- !u!114 &6433360941945584135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3498658688403112512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52e750c43ef6ed14dbdf8db81d2fec89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDrop
+  dropPrefabs:
+  - {fileID: 7265921628050328051, guid: e430bbc1166e121469d0e27ba5f186ad, type: 3}
+  - {fileID: 1158919513138484288, guid: 67c8c937bc7540949a9fc565ef0ffe1b, type: 3}
+  - {fileID: 6696466473399116010, guid: 6d3c16c0f8048f4499bf9f6d69161851, type: 3}
+  - {fileID: 2533085451314219548, guid: c4db4ee168a529547a0b113b53e0686a, type: 3}
+  - {fileID: 2281939320161795140, guid: 0d9b6cecc437caa428d4cd2cc03a1a2a, type: 3}
+  - {fileID: 1158919513138484288, guid: d51134d35a9a847428af0b7b972001d1, type: 3}
+  dropChances: []
+  guaranteedDrop: 0
+  maxDrops: 1
+  useWeightedRandomSelection: 1
+  overallDropChance: 0.1
+  useGlobalDropLimiting: 1
+  globalDropCooldown: 2
+  maxDropsPerWave: 3
+  dropChanceReduction: 0.5
+  enemyThresholdForReduction: 5
+  dropForce: 0
+  dropRadius: 2
+  dropHeight: 1
+  dropOnDestroy: 1
+  dropOnHealthDeath: 1
 --- !u!114 &3562361458165798966
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -328,10 +364,11 @@ MonoBehaviour:
   maxHP: 3
   hp: 0
   acceptProjectileTriggers: 1
-  acceptProjectileCollisions: 0
+  acceptProjectileCollisions: 1
+  enableDebugLogs: 0
   invulnDuration: 0.01
   flashInterval: 0.06
-  destroyOnDeath: 0
+  destroyOnDeath: 1
   destroyDelay: 0
   deathVFX: {fileID: 0}
   deathSFX: {fileID: 0}
@@ -342,6 +379,33 @@ MonoBehaviour:
   onDeath:
     m_PersistentCalls:
       m_Calls: []
+--- !u!54 &-4903366528934686901
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3498658688403112512}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 116
+  m_CollisionDetection: 0
 --- !u!1 &3789590513148378367
 GameObject:
   m_ObjectHideFlags: 0

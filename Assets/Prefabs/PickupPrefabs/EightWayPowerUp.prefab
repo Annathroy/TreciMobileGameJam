@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6696466473399116010
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 84164638438665761}
+  - component: {fileID: 3757173438789942790}
+  - component: {fileID: 3317306951243242065}
+  m_Layer: 0
+  m_Name: EightWayPowerUp
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &84164638438665761
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6696466473399116010}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &3757173438789942790
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6696466473399116010}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3317306951243242065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6696466473399116010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01d402e8432c2af42a6bcfa5feea8d02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PowerUpPickup
+  kind: 4
+  overrideDuration: -1
+  moveSpeed: 2
+  maxLifetime: 15
+  viewportMargin: 0.1
+  powerUpTextures:
+  - {fileID: 2800000, guid: af57abcad0084ca4fa8ef2e46520b11c, type: 3}
+  - {fileID: 2800000, guid: 25095d0067894ab4a96f4f49d070f4dd, type: 3}
+  - {fileID: 2800000, guid: 8c772052e1f7f6d4d859e5be05582936, type: 3}
+  - {fileID: 2800000, guid: e069636605fb188478522e4181cc5d78, type: 3}
+  - {fileID: 2800000, guid: b03238757a11ebf40b69a7636928100a, type: 3}
+  - {fileID: 0}
+  spriteSize: {x: 1, y: 1}
+  spriteTint: {r: 1, g: 1, b: 1, a: 1}
+  enablePulseAnimation: 1
+  pulseSpeed: 2
+  pulseIntensity: 0.2

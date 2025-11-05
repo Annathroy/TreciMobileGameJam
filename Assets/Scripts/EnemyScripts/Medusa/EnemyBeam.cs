@@ -33,13 +33,20 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
     [SerializeField] bool infiniteLoop = true;
     [SerializeField] int rounds = 3;          // ignored if infiniteLoop=true
 
+    [Header("Periodic Spawning")]
+    [Tooltip("Time to wait before checking for enemies and respawning if none exist")]
+    [SerializeField] float spawnCheckInterval = 5f;
+    [Tooltip("Delay before spawning new enemies after detecting none in scene")]
+    [SerializeField] float respawnDelay = 2f;
+
     EnemyUnit a, b;
     BeamLink beam;
 
-    enum State { Spawning, Moving, Shooting, PostPause }
+    enum State { Spawning, Moving, Shooting, PostPause, WaitingToRespawn }
     State state = State.Spawning;
 
     float phaseEndsAt = 0f;
+    float nextSpawnCheck = 0f;
     int roundsDone = 0;
 
     void Start()
@@ -47,14 +54,22 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
         if (!cam) cam = Camera.main;
         SpawnPair();
         BeginMovePhase();
+        nextSpawnCheck = Time.time + spawnCheckInterval;
     }
 
     void Update()
     {
+        // Check for periodic respawning when no enemies exist
+        if (Time.time >= nextSpawnCheck)
+        {
+            CheckAndRespawnEnemies();
+            nextSpawnCheck = Time.time + spawnCheckInterval;
+        }
+
         switch (state)
         {
             case State.Moving:
-                if (a.Arrived && b.Arrived)
+                if (a && b && a.Arrived && b.Arrived)
                     BeginShootingPhase();
                 break;
 
@@ -70,7 +85,7 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
                     if (!infiniteLoop && roundsDone >= rounds)
                     {
                         // stop here
-                        beam.Enable(false);
+                        if (beam) beam.Enable(false);
                         enabled = false;
                         return;
                     }
@@ -78,13 +93,45 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
                     RetargetAndMove();
                 }
                 break;
+
+            case State.WaitingToRespawn:
+                if (Time.time >= phaseEndsAt)
+                {
+                    SpawnPair();
+                    BeginMovePhase();
+                }
+                break;
+        }
+    }
+
+    void CheckAndRespawnEnemies()
+    {
+        // Check if both enemies are missing/destroyed
+        if ((a == null || !a.gameObject.activeInHierarchy) &&
+            (b == null || !b.gameObject.activeInHierarchy))
+        {
+            // Clean up beam if it exists
+            if (beam != null)
+            {
+                beam.Enable(false);
+                Destroy(beam.gameObject);
+                beam = null;
+            }
+
+            // Start respawn countdown
+            state = State.WaitingToRespawn;
+            phaseEndsAt = Time.time + respawnDelay;
         }
     }
 
     // ---- phases ----
     void BeginMovePhase()
     {
-        beam.Enable(false);
+        if (beam) beam.Enable(false);
+
+        // Only proceed if we have valid enemies
+        if (a == null || b == null) return;
+
         // choose two distinct Zs
         float zA, zB;
         int guard = 0;
@@ -101,14 +148,14 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
 
     void BeginShootingPhase()
     {
-        beam.Enable(true);                // “shooting” = beam on
+        if (beam) beam.Enable(true);                // "shooting" = beam on
         phaseEndsAt = Time.time + beamDuration;
         state = State.Shooting;
     }
 
     void BeginPostPause()
     {
-        beam.Enable(false);               // stop shooting
+        if (beam) beam.Enable(false);               // stop shooting
         phaseEndsAt = Time.time + Mathf.Max(0f, postBeamPause);
         state = State.PostPause;
     }
@@ -136,8 +183,11 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
         Vector3 spawnLeft = new Vector3(leftX, groundY, spawnZ);
         Vector3 spawnRight = new Vector3(rightX, groundY, spawnZ);
 
-        a = Instantiate(enemyPrefab, spawnLeft, Quaternion.identity);
-        b = Instantiate(enemyPrefab, spawnRight, Quaternion.identity);
+        // Create rotation with 90 degrees on x-axis
+        Quaternion enemyRotation = Quaternion.Euler(90f, 0f, 0f);
+
+        a = Instantiate(enemyPrefab, spawnLeft, enemyRotation);
+        b = Instantiate(enemyPrefab, spawnRight, enemyRotation);
 
         a.SetFixedX(leftX);
         b.SetFixedX(rightX);
