@@ -89,7 +89,4 @@ public class SharedFishPool : MonoBehaviour
 }
 
 // Attached automatically to pooled instances
-public class PooledObject : MonoBehaviour
-{
-    public GameObject SourcePrefab; // set by pool
-}
+

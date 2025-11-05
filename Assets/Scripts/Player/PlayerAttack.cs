@@ -38,8 +38,6 @@ public class PlayerAttack : MonoBehaviour
     private void Shoot()
     {
         // play shooting SFX once per attack
-        if (!playerIntro.CanAttack) return;
-        AudioManager.Instance?.PlaySFX("shot");
 
         for (int i = 0; i < bulletLines; i++)
         {
