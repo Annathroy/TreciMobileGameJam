@@ -75,6 +75,20 @@ public class ParallaxScroller3D : MonoBehaviour
         }
 
         baseMat = new Material(unlitShader) { color = tint };
+
+        // --- BEGIN: Added for transparency ---
+        // Set material properties for transparency. This is for URP/Unlit.
+        baseMat.SetFloat("_Surface", 1f); // 1.0 for Transparent
+        baseMat.SetFloat("_Blend", 0f);   // 0.0 for Alpha blending
+        baseMat.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        baseMat.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        baseMat.SetFloat("_ZWrite", 0f);
+        baseMat.DisableKeyword("_ALPHATEST_ON");
+        baseMat.EnableKeyword("_ALPHABLEND_ON");
+        baseMat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        baseMat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+        // --- END: Added for transparency ---
+
         if (forcedRenderQueue >= 0) baseMat.renderQueue = forcedRenderQueue;
 
         mpb = new MaterialPropertyBlock();
@@ -131,7 +145,7 @@ public class ParallaxScroller3D : MonoBehaviour
             quad.layer = layer;
             quad.transform.SetParent(transform, false);
 
-            // Face upward toward the camera (top-down)
+            // Face upward toward the camera (top-down) - FIXED: No horizontal rotation
             quad.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             quad.transform.localScale = new Vector3(imageWorldSize.x, imageWorldSize.y, 1f);
 
@@ -343,11 +357,8 @@ public class ParallaxScroller3D : MonoBehaviour
         Vector3 center = WorldFromPosAlong(tile.posAlong);
         tile.t.position = center;
 
-        if (axisRight.sqrMagnitude > 1e-4f)
-        {
-            float yaw = Mathf.Atan2(axisRight.x, axisRight.z) * Mathf.Rad2Deg;
-            tile.t.rotation = Quaternion.Euler(90f, yaw, 0f);
-        }
+        // FIXED: Remove horizontal rotation - keep only the 90-degree X rotation for top-down view
+        tile.t.rotation = Quaternion.Euler(90f, 0f, 0f);
 
         tile.t.localScale = new Vector3(imageWorldSize.x, imageWorldSize.y, 1f);
     }
