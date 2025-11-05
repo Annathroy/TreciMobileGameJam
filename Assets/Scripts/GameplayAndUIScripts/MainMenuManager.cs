@@ -15,6 +15,11 @@ public class MainMenuManager : MonoBehaviour
     [Header("Audio (via AudioManager)")]
     [SerializeField] private Slider volumeSlider;     // Music volume (0..1)
     [SerializeField] private Slider sfxVolumeSlider;  // SFX volume (0..1)
+    [SerializeField] private Toggle musicToggle;      // Toggle for music on/off
+    [SerializeField] private Toggle sfxToggle;        // Toggle for SFX on/off
+
+    private float lastMusicVolume = 0.8f;  // Store last non-zero volume
+    private float lastSfxVolume = 0.8f;    // Store last non-zero volume
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI highScoreText;
@@ -48,6 +53,18 @@ public class MainMenuManager : MonoBehaviour
             sfxVolumeSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
         }
 
+        // Setup toggles
+        if (musicToggle)
+        {
+            musicToggle.onValueChanged.RemoveAllListeners();
+            musicToggle.onValueChanged.AddListener(OnMusicToggleChanged);
+        }
+        if (sfxToggle)
+        {
+            sfxToggle.onValueChanged.RemoveAllListeners();
+            sfxToggle.onValueChanged.AddListener(OnSfxToggleChanged);
+        }
+
         // Init from AudioManager
         var am = AudioManager.Instance;
         if (am != null)
@@ -60,6 +77,12 @@ public class MainMenuManager : MonoBehaviour
 
             volumeSlider?.SetValueWithoutNotify(am.musicVolume);
             sfxVolumeSlider?.SetValueWithoutNotify(am.sfxVolume);
+
+            musicToggle?.SetIsOnWithoutNotify(am.musicVolume > 0f);
+            sfxToggle?.SetIsOnWithoutNotify(am.sfxVolume > 0f);
+
+            lastMusicVolume = am.musicVolume > 0f ? am.musicVolume : 0.8f;
+            lastSfxVolume = am.sfxVolume > 0f ? am.sfxVolume : 0.8f;
         }
         else
         {
@@ -109,7 +132,10 @@ public class MainMenuManager : MonoBehaviour
     {
         var am = AudioManager.Instance;
         if (am == null) return;
+
         am.SetMusicVolume(value);
+        musicToggle?.SetIsOnWithoutNotify(value > 0f);
+        if (value > 0f) lastMusicVolume = value;
         am.EnsureMusicPlaying(); // if something stopped it, resume
     }
 
@@ -117,7 +143,47 @@ public class MainMenuManager : MonoBehaviour
     {
         var am = AudioManager.Instance;
         if (am == null) return;
-        am.SetSfxVolume(value); // persists; affects next SFX plays
+
+        am.SetSfxVolume(value);
+        sfxToggle?.SetIsOnWithoutNotify(value > 0f);
+        if (value > 0f) lastSfxVolume = value; // persists; affects next SFX plays
+    }
+
+    public void OnMusicToggleChanged(bool isOn)
+    {
+        var am = AudioManager.Instance;
+        if (am == null) return;
+
+        if (isOn)
+        {
+            am.SetMusicVolume(lastMusicVolume);
+            volumeSlider?.SetValueWithoutNotify(lastMusicVolume);
+            am.EnsureMusicPlaying();
+        }
+        else
+        {
+            lastMusicVolume = am.musicVolume > 0f ? am.musicVolume : lastMusicVolume;
+            am.SetMusicVolume(0f);
+            volumeSlider?.SetValueWithoutNotify(0f);
+        }
+    }
+
+    public void OnSfxToggleChanged(bool isOn)
+    {
+        var am = AudioManager.Instance;
+        if (am == null) return;
+
+        if (isOn)
+        {
+            am.SetSfxVolume(lastSfxVolume);
+            sfxVolumeSlider?.SetValueWithoutNotify(lastSfxVolume);
+        }
+        else
+        {
+            lastSfxVolume = am.sfxVolume > 0f ? am.sfxVolume : lastSfxVolume;
+            am.SetSfxVolume(0f);
+            sfxVolumeSlider?.SetValueWithoutNotify(0f);
+        }
     }
 
     public void OnBackToMainMenu()
