@@ -90,10 +90,7 @@ public class PowerUpPickup : MonoBehaviour
             materialPropertyBlock.SetTexture("_MainTex", texture);  // Built-in fallback
             spriteRenderer.SetPropertyBlock(materialPropertyBlock);
         }
-        else
-        {
-            Debug.LogWarning($"[PowerUpPickup] No texture assigned for {kind} (index {textureIndex})");
-        }
+       
     }
 
     private void Update()

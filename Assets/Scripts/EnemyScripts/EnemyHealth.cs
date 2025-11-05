@@ -44,8 +44,7 @@ public class EnemyHealth : MonoBehaviour
         GetComponentsInChildren(true, renderers);
         onHealthChanged?.Invoke(hp, maxHP);
 
-        if (enableDebugLogs)
-            Debug.Log($"[EnemyHealth] {gameObject.name} initialized with {hp}/{maxHP} HP");
+       
     }
 
     // ---------- Public API ----------

@@ -12,7 +12,6 @@ public class FishRandomizer : MonoBehaviour
     [SerializeField] private int maxActiveCount = 4;
 
     [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = false;
 
     private float nextRandomizeTime;
 
@@ -47,10 +46,7 @@ public class FishRandomizer : MonoBehaviour
         int targetActiveCount = Random.Range(minActiveCount, maxActiveCount + 1);
         targetActiveCount = Mathf.Clamp(targetActiveCount, 0, fishObjects.Length);
 
-        if (enableDebugLogs)
-        {
-            Debug.Log($"FishRandomizer: Setting {targetActiveCount} fish to active");
-        }
+      
 
         // First, disable all fish
         for (int i = 0; i < fishObjects.Length; i++)
@@ -83,10 +79,7 @@ public class FishRandomizer : MonoBehaviour
                 fishObjects[fishIndex].SetActive(true);
                 availableIndices.RemoveAt(randomIndex);
 
-                if (enableDebugLogs)
-                {
-                    Debug.Log($"FishRandomizer: Activated fish at index {fishIndex}");
-                }
+                
             }
         }
     }
@@ -96,10 +89,7 @@ public class FishRandomizer : MonoBehaviour
         float randomInterval = Random.Range(intervalMin, intervalMax);
         nextRandomizeTime = Time.time + randomInterval;
 
-        if (enableDebugLogs)
-        {
-            Debug.Log($"FishRandomizer: Next randomization in {randomInterval:F1} seconds");
-        }
+       
     }
 }
     ///

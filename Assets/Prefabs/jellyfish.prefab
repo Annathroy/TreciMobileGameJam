@@ -203,7 +203,6 @@ MonoBehaviour:
   - {fileID: 1158919513138484288, guid: d51134d35a9a847428af0b7b972001d1, type: 3}
   dropChances: []
   guaranteedDrop: 0
-  maxDrops: 1
   useWeightedRandomSelection: 1
   overallDropChance: 0.1
   useGlobalDropLimiting: 1

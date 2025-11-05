@@ -7,7 +7,6 @@ public class EnemyDrop : MonoBehaviour
     [SerializeField] private GameObject[] dropPrefabs;
     [SerializeField] private float[] dropChances; // 0.0 to 1.0 for each prefab
     [SerializeField] private bool guaranteedDrop = false;
-    [SerializeField] private int maxDrops = 1;
 
     [Header("Random Selection")]
     [SerializeField] private bool useWeightedRandomSelection = true;
@@ -46,14 +45,7 @@ public class EnemyDrop : MonoBehaviour
         }
 
         // Ensure arrays match
-        if (dropPrefabs != null && dropChances != null)
-        {
-            if (dropPrefabs.Length != dropChances.Length)
-            {
-                Debug.LogWarning($"[EnemyDrop] Drop prefabs and chances arrays don't match on {gameObject.name}");
-            }
-        }
-
+       
         // Try to hook into enemy death if there's a health component
         if (dropOnHealthDeath)
         {

@@ -8,8 +8,6 @@ public class FishMover_Straight : BaseFishMover
     [SerializeField] float forwardSpeedMul = 1f;  // 1 = normal speed
     [SerializeField] float phaseOffsetRandom = 2f * Mathf.PI; // random start phase
 
-    [Header("Heading")]
-    [SerializeField] float endYawJitterDeg = 0f;  // keep 0 to stay flat
 
     Vector3 fwdAxis;     // strictly ±X
     Vector3 waveAxis;    // strictly ±Z
