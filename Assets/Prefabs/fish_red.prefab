@@ -48,6 +48,7 @@ GameObject:
   - component: {fileID: -1617730229131314195}
   - component: {fileID: 8901799554534433314}
   - component: {fileID: 8414311038576522136}
+  - component: {fileID: 8195383029922851252}
   m_Layer: 0
   m_Name: fish_red
   m_TagString: Enemy
@@ -190,17 +191,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHP: 1
-  hp: 0
+  hp: 1
   acceptProjectileTriggers: 1
   acceptProjectileCollisions: 1
-  enableDebugLogs: 0
   invulnDuration: 0.01
   flashInterval: 0.06
-  destroyOnDeath: 1
-  destroyDelay: 0
   deathVFX: {fileID: 0}
   deathSFX: {fileID: 0}
   deathSFXVolume: 0.9
+  useSharedPool: 1
+  onlyPoolWhenKilledByProjectile: 1
+  enableDebugLogs: 0
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -234,6 +235,22 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 116
   m_CollisionDetection: 0
+--- !u!114 &8195383029922851252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 57491976566115588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48e8a937293555445ab9a0e53b855deb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BulletDeathEffect
+  imageSprite1: {fileID: 21300000, guid: c8f02ce7b09cf0b41a6556362e79c8f5, type: 3}
+  imageSprite2: {fileID: 21300000, guid: d72750b0d6d46104da4b1c791c4f676a, type: 3}
+  gapBetween: 0.1
+  lifetime: 0.1
 --- !u!1 &1066632012706495205
 GameObject:
   m_ObjectHideFlags: 0

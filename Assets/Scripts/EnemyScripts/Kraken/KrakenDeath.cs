@@ -181,10 +181,6 @@ public class KrakenDeath : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    void Update()
-    {
-        if (!_running && Input.GetKeyDown(KeyCode.K))
-            TriggerDeath();
-    }
+    
 #endif
 }

@@ -90,6 +90,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0ce515159b500c14eae8d50eaacbe2b7, type: 3}
       insertIndex: -1
       addedObject: {fileID: -6462967928448566019}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0ce515159b500c14eae8d50eaacbe2b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8700150188228838088}
   m_SourcePrefab: {fileID: 100100000, guid: 0ce515159b500c14eae8d50eaacbe2b7, type: 3}
 --- !u!1 &3527564104403465560 stripped
 GameObject:
@@ -228,20 +231,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHP: 5
-  hp: 0
+  hp: 5
   acceptProjectileTriggers: 1
   acceptProjectileCollisions: 1
-  enableDebugLogs: 0
   invulnDuration: 0.1
   flashInterval: 0.06
-  destroyOnDeath: 0
-  destroyDelay: 0
   deathVFX: {fileID: 0}
   deathSFX: {fileID: 0}
   deathSFXVolume: 0.9
+  useSharedPool: 1
+  onlyPoolWhenKilledByProjectile: 1
+  enableDebugLogs: 0
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []
   onDeath:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8700150188228838088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3527564104403465560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48e8a937293555445ab9a0e53b855deb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BulletDeathEffect
+  imageSprite1: {fileID: 21300000, guid: c8f02ce7b09cf0b41a6556362e79c8f5, type: 3}
+  imageSprite2: {fileID: 21300000, guid: d72750b0d6d46104da4b1c791c4f676a, type: 3}
+  gapBetween: 0.1
+  lifetime: 0.1

@@ -16,35 +16,58 @@ public class EnemyHealth : MonoBehaviour
     [Tooltip("If on, enemy will also read damage from collisions (non-trigger).")]
     [SerializeField] private bool acceptProjectileCollisions = false;
 
-    [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = false;
-
     [Header("Invulnerability")]
     [SerializeField] private float invulnDuration = 0.1f;
     [SerializeField] private float flashInterval = 0.06f;
 
-    [Header("Death")]
-    [SerializeField] private bool destroyOnDeath = false;
-    [SerializeField] private float destroyDelay = 0.0f;
+    [Header("Death VFX/SFX")]
     [SerializeField] private GameObject deathVFX;
     [SerializeField] private AudioClip deathSFX;
     [SerializeField] private float deathSFXVolume = 0.9f;
+
+    [Header("Pooling")]
+    [Tooltip("If true, will return to SharedFishPool (if available) instead of Destroy/disable.")]
+    [SerializeField] private bool useSharedPool = true;
+    [Tooltip("Only return to pool if death was caused by a projectile.")]
+    [SerializeField] private bool onlyPoolWhenKilledByProjectile = true;
+
+    [Header("Debug")]
+    [SerializeField] private bool enableDebugLogs = false;
 
     [Header("Events")]
     public UnityEvent<int, int> onHealthChanged;  // (current, max)
     public UnityEvent onDeath;
 
+    // ---- internals ----
     bool invulnerable = false;
     Coroutine invulnCo;
     readonly List<Renderer> renderers = new();
+    bool lastHitWasProjectile = false;           // tracks kill source
+    PooledObject po;                             // for pool return hint
 
     void Awake()
     {
+        CacheRenderers();
+        po = GetComponent<PooledObject>();       // present if this enemy is pooled
         hp = Mathf.Max(1, maxHP);
-        GetComponentsInChildren(true, renderers);
         onHealthChanged?.Invoke(hp, maxHP);
+    }
 
-       
+    // If we're using a pool, this object will be reactivated; reset state here.
+    void OnEnable()
+    {
+        // If already initialized once, top-up hp on reuse
+        if (hp <= 0 || hp > maxHP) hp = maxHP;
+        SetVisible(true);
+        invulnerable = false;
+        lastHitWasProjectile = false;
+        onHealthChanged?.Invoke(hp, maxHP);
+    }
+
+    void OnDisable()
+    {
+        if (invulnCo != null) { StopCoroutine(invulnCo); invulnCo = null; }
+        invulnerable = false;
     }
 
     // ---------- Public API ----------
@@ -52,17 +75,10 @@ public class EnemyHealth : MonoBehaviour
     {
         if (amount <= 0 || invulnerable || hp <= 0) return;
 
-        if (enableDebugLogs)
-            Debug.Log($"[EnemyHealth] {gameObject.name} taking {amount} damage. HP: {hp} -> {hp - amount}");
-
         hp = Mathf.Max(0, hp - amount);
         onHealthChanged?.Invoke(hp, maxHP);
 
-        if (hp <= 0)
-        {
-            Die();
-            return;
-        }
+        if (hp <= 0) { Die(); return; }
 
         if (invulnCo != null) StopCoroutine(invulnCo);
         invulnCo = StartCoroutine(InvulnerabilityFlash(invulnDuration, flashInterval));
@@ -82,55 +98,28 @@ public class EnemyHealth : MonoBehaviour
     public int MaxHP => maxHP;
     public bool IsDead => hp <= 0;
 
-    // ---------- Optional automatic intake from Projectile ----------
+    // ---------- Automatic intake from Projectile ----------
     void OnTriggerEnter(Collider other)
     {
-        if (enableDebugLogs)
-            Debug.Log($"[EnemyHealth] {gameObject.name} trigger entered by: {other.name} (Tag: {other.tag})");
-
-        if (!acceptProjectileTriggers || hp <= 0) 
-        {
-            if (enableDebugLogs)
-                Debug.Log($"[EnemyHealth] Ignoring trigger - acceptProjectileTriggers: {acceptProjectileTriggers}, hp: {hp}");
-            return;
-        }
+        if (!acceptProjectileTriggers || hp <= 0) return;
 
         var proj = other.GetComponent<Projectile>() ?? other.GetComponentInParent<Projectile>();
-        if (proj == null) 
-        {
-            if (enableDebugLogs)
-                Debug.Log($"[EnemyHealth] No Projectile component found on {other.name}");
-            return;
-        }
+        if (proj == null) return;
 
-        if (enableDebugLogs)
-            Debug.Log($"[EnemyHealth] Found projectile with damage: {proj.Damage}, destroyOnHit: {proj.DestroyOnHit}");
-
+        lastHitWasProjectile = true;
         ApplyDamage(proj.Damage);
         if (proj.DestroyOnHit) proj.ForceDespawn();
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (enableDebugLogs)
-            Debug.Log($"[EnemyHealth] {gameObject.name} collision with: {collision.gameObject.name}");
-
-        if (!acceptProjectileCollisions || hp <= 0) 
-        {
-            if (enableDebugLogs)
-                Debug.Log($"[EnemyHealth] Ignoring collision - acceptProjectileCollisions: {acceptProjectileCollisions}, hp: {hp}");
-            return;
-        }
+        if (!acceptProjectileCollisions || hp <= 0) return;
 
         var proj = collision.collider.GetComponent<Projectile>() ??
                    collision.collider.GetComponentInParent<Projectile>();
-        if (proj == null) 
-        {
-            if (enableDebugLogs)
-                Debug.Log($"[EnemyHealth] No Projectile component found on {collision.gameObject.name}");
-            return;
-        }
+        if (proj == null) return;
 
+        lastHitWasProjectile = true;
         ApplyDamage(proj.Damage);
         if (proj.DestroyOnHit) proj.ForceDespawn();
     }
@@ -138,38 +127,50 @@ public class EnemyHealth : MonoBehaviour
     // ---------- Death ----------
     void Die()
     {
-        if (enableDebugLogs)
-            Debug.Log($"[EnemyHealth] {gameObject.name} died!");
+        if (enableDebugLogs) Debug.Log($"[EnemyHealth] {name} died (proj:{lastHitWasProjectile}).");
 
-        if (invulnCo != null) StopCoroutine(invulnCo);
-        SetVisible(true);
+        if (invulnCo != null) { StopCoroutine(invulnCo); invulnCo = null; }
+        SetVisible(true); // ensure visible for any kill VFX snapshot
         onDeath?.Invoke();
 
+        // spawn VFX/SFX BEFORE despawn
         if (deathVFX)
         {
             var vfx = Instantiate(deathVFX, transform.position, Quaternion.identity);
             Destroy(vfx, 3f);
         }
-        if (deathSFX)
-            AudioSource.PlayClipAtPoint(deathSFX, transform.position, deathSFXVolume);
+        if (deathSFX) AudioSource.PlayClipAtPoint(deathSFX, transform.position, deathSFXVolume);
 
-        if (destroyOnDeath) Destroy(gameObject, destroyDelay);
-        else gameObject.SetActive(false);
+        // pool vs disable
+        bool shouldPool = useSharedPool && SharedFishPool.Instance != null &&
+                          (!onlyPoolWhenKilledByProjectile || lastHitWasProjectile);
+
+        if (shouldPool)
+        {
+            // reset hp for next reuse and return to pool
+            hp = maxHP;
+            SharedFishPool.Instance.Despawn(gameObject, po ? po.SourcePrefab : null);
+        }
+        else
+        {
+            // fallback: just disable (or destroy if you really want)
+            gameObject.SetActive(false);
+            // If you prefer hard-destroy instead, replace with: Destroy(gameObject);
+        }
     }
 
     // ---------- Flash ----------
     IEnumerator InvulnerabilityFlash(float duration, float interval)
     {
         invulnerable = true;
-        float t = 0f;
+        float until = Time.time + duration;
         bool vis = true;
 
-        while (t < duration)
+        while (Time.time < until)
         {
             vis = !vis;
             SetVisible(vis);
             yield return new WaitForSeconds(interval);
-            t += interval;
         }
 
         SetVisible(true);
@@ -179,30 +180,36 @@ public class EnemyHealth : MonoBehaviour
 
     void SetVisible(bool on)
     {
+        if (renderers.Count == 0) CacheRenderers();
         for (int i = 0; i < renderers.Count; i++)
             if (renderers[i]) renderers[i].enabled = on;
+    }
+
+    void CacheRenderers()
+    {
+        renderers.Clear();
+        GetComponentsInChildren(true, renderers);
     }
 
 #if UNITY_EDITOR
     void OnValidate()
     {
         maxHP = Mathf.Max(1, maxHP);
-        if (hp > 0) hp = Mathf.Clamp(hp, 0, maxHP);
+        hp = Mathf.Clamp(hp <= 0 ? maxHP : hp, 0, maxHP);
         flashInterval = Mathf.Max(0.01f, flashInterval);
         invulnDuration = Mathf.Max(0f, invulnDuration);
-        destroyDelay = Mathf.Max(0f, destroyDelay);
     }
 
     void Reset()
     {
-        // Set reasonable defaults when component is added
         maxHP = 5;
         hp = maxHP;
         acceptProjectileTriggers = true;
         acceptProjectileCollisions = false;
         invulnDuration = 0.1f;
         flashInterval = 0.06f;
-        destroyOnDeath = false;
+        useSharedPool = true;
+        onlyPoolWhenKilledByProjectile = true;
         enableDebugLogs = false;
     }
 #endif
