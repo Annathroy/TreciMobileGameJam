@@ -19,6 +19,8 @@ public class SpikeProjectile : MonoBehaviour
     private float enableHitAt;
     private Collider[] ignoreThese; // colliders to ignore temporarily
 
+    private const string PLAYER_TAG = "Player"; // only interact with this tag
+
     public void Launch(Vector3 position, Vector3 direction, SimplePool pool, Collider[] ignore = null)
     {
         transform.position = position;
@@ -62,15 +64,15 @@ public class SpikeProjectile : MonoBehaviour
         {
             if (Physics.Raycast(transform.position, dir, out var hit, step.magnitude + skin, hitMask, QueryTriggerInteraction.Ignore))
             {
-                transform.position = hit.point - dir * skin;
-
-                // Try to apply damage if target has PlayerHealth
-                var health = hit.collider.GetComponentInParent<PlayerHealth>();
-                if (health != null)
+                // Only interact with "Player" tag
+                if (hit.collider.CompareTag(PLAYER_TAG))
                 {
-                    health.ApplyDamage(damage);
+                    var health = hit.collider.GetComponentInParent<PlayerHealth>();
+                    if (health != null)
+                        health.ApplyDamage(damage);
                 }
 
+                transform.position = hit.point - dir * skin;
                 ReturnToPool();
                 return;
             }
@@ -82,12 +84,11 @@ public class SpikeProjectile : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (Time.time < enableHitAt) return;
+        if (!other.CompareTag(PLAYER_TAG)) return;
 
         var health = other.GetComponentInParent<PlayerHealth>();
         if (health != null)
-        {
             health.ApplyDamage(damage);
-        }
 
         ReturnToPool();
     }
@@ -95,12 +96,11 @@ public class SpikeProjectile : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         if (Time.time < enableHitAt) return;
+        if (!collision.collider.CompareTag(PLAYER_TAG)) return;
 
         var health = collision.collider.GetComponentInParent<PlayerHealth>();
         if (health != null)
-        {
             health.ApplyDamage(damage);
-        }
 
         ReturnToPool();
     }

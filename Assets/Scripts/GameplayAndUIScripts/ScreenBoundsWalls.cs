@@ -16,7 +16,7 @@ public class ScreenBoundsWalls : MonoBehaviour
     private void Awake()
     {
         QualitySettings.vSyncCount = 0;           // mobile: use frameRate, not vSync
-        Application.targetFrameRate = 60;         // or 120 if your device can handle it
+        Application.targetFrameRate = 120;         // or 120 if your device can handle it
         Time.fixedDeltaTime = 1f / 60f;           // keep physics in sync with visuals
         Time.maximumDeltaTime = 1f / 15f;         // avoid big physics catch-ups
         Physics.autoSyncTransforms = false;       // cheaper
