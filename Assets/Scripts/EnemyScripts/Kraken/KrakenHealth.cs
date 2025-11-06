@@ -29,8 +29,14 @@ public class KrakenHealth : MonoBehaviour
     [SerializeField] private float knockback = 10f;
     [Tooltip("Flash my renderers while invulnerable.")]
     [SerializeField] private bool flashOnHit = true;
-    [SerializeField] private Color flashColor = new Color(1f, 0.25f, 0.25f, 1f);
+    [SerializeField] private Color flashColor = Color.white;
     [SerializeField] private float flashInterval = 0.06f;
+
+    [Header("Death Flash")]
+    [Tooltip("Flash semi-white on death before returning to normal texture.")]
+    [SerializeField] private bool flashOnDeath = true;
+    [SerializeField] private Color deathFlashColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+    [SerializeField] private float deathFlashDuration = 0.3f;
 
     [Header("Cleanup / Death")]
     [Tooltip("Disable these behaviours on death (AI, nav, attacks…).")]
@@ -40,6 +46,10 @@ public class KrakenHealth : MonoBehaviour
     [Tooltip("Optional: reference to your KrakenDeath; if null, searched on this GameObject.")]
     [SerializeField] private KrakenDeath krakenDeath;
 
+    [Header("Victory Integration")]
+    [Tooltip("Automatically find and subscribe to OnWin script on death.")]
+    [SerializeField] private bool autoSubscribeToVictory = true;
+
     [Header("Events")]
     public UnityEvent<int, int> onHpChanged; // (current, max)
     public UnityEvent onDamaged;
@@ -47,10 +57,12 @@ public class KrakenHealth : MonoBehaviour
 
     // --- internals ---
     bool invulnerable;
+    bool isDead = false; // Track death state to prevent multiple death calls
     Rigidbody rb;
     readonly List<Renderer> rends = new List<Renderer>();
     MaterialPropertyBlock mpb;
     static readonly int ColorProp = Shader.PropertyToID("_BaseColor"); // URP/Lit & Unlit use _BaseColor
+    private OnWin onWinScript;
 
     void Awake()
     {
@@ -62,6 +74,29 @@ public class KrakenHealth : MonoBehaviour
         mpb = new MaterialPropertyBlock();
 
         currentHP = Mathf.Clamp(currentHP <= 0 ? maxHP : currentHP, 1, maxHP);
+
+        // Don't invoke onHpChanged in Awake to prevent early event triggers
+        // onHpChanged?.Invoke(currentHP, maxHP);
+    }
+
+    void Start()
+    {
+        // Subscribe to OnWin after all objects are initialized
+        if (autoSubscribeToVictory)
+        {
+            onWinScript = FindFirstObjectByType<OnWin>();
+            if (onWinScript != null)
+            {
+                onDeath.AddListener(onWinScript.TriggerVictory);
+                Debug.Log("[KrakenHealth] OnWin script found and subscribed to death event.");
+            }
+            else
+            {
+                Debug.LogWarning("[KrakenHealth] OnWin script not found in scene.");
+            }
+        }
+
+        // Now it's safe to invoke HP changed event
         onHpChanged?.Invoke(currentHP, maxHP);
     }
 
@@ -70,11 +105,13 @@ public class KrakenHealth : MonoBehaviour
     /// <summary>Apply damage. Returns true if actually damaged.</summary>
     public bool TakeDamage(int amount, Vector3 hitPoint = default, Vector3 hitFrom = default)
     {
-        if (amount <= 0 || invulnerable || currentHP <= 0) return false;
+        if (amount <= 0 || invulnerable || currentHP <= 0 || isDead) return false;
 
         currentHP = Mathf.Max(0, currentHP - amount);
         onHpChanged?.Invoke(currentHP, maxHP);
         onDamaged?.Invoke();
+
+        Debug.Log($"[KrakenHealth] Took {amount} damage. HP: {currentHP}/{maxHP}");
 
         // knockback (if we have a rigidbody and a direction)
         if (rb && knockback > 0f && hitFrom != Vector3.zero)
@@ -103,7 +140,7 @@ public class KrakenHealth : MonoBehaviour
 
     void HandleHitCollider(Collider other)
     {
-        if (!IsDamaging(other)) return;
+        if (!IsDamaging(other) || isDead) return;
 
         // detect explicit damage value if the object has a component like IDamageDealer or DamagePayload
         int dmg = contactDamage;
@@ -165,28 +202,81 @@ public class KrakenHealth : MonoBehaviour
 
     void Die()
     {
-        if (currentHP <= 0)
+        if (currentHP <= 0 && !isDead)
         {
-            // disable gameplay bits
-            if (disableOnDeath != null)
-                for (int i = 0; i < disableOnDeath.Length; i++)
-                    if (disableOnDeath[i]) disableOnDeath[i].enabled = false;
+            isDead = true; // Prevent multiple death calls
+            Debug.Log("[KrakenHealth] Kraken is dying!");
 
-            if (collidersOnBody != null)
-                for (int i = 0; i < collidersOnBody.Length; i++)
-                    if (collidersOnBody[i]) collidersOnBody[i].enabled = false;
-
-            // stop i-frames/flash
+            // stop i-frames/flash and start death flash
             invulnerable = false;
             StopAllCoroutines();
-            RestoreRendererColors();
 
-            onDeath?.Invoke();
-
-            // trigger your upward exit animation
-            if (krakenDeath) krakenDeath.TriggerDeath();
-            else Destroy(gameObject); // fallback
+            // Start death flash before continuing with death sequence
+            StartCoroutine(Co_DeathFlash());
         }
+    }
+
+    IEnumerator Co_DeathFlash()
+    {
+        if (flashOnDeath && rends.Count > 0)
+        {
+            // Cache original colors
+            var originals = new Color[rends.Count];
+            for (int i = 0; i < rends.Count; i++)
+            {
+                var r = rends[i];
+                if (!r) continue;
+                r.GetPropertyBlock(mpb);
+                originals[i] = mpb.GetColor(ColorProp);
+            }
+
+            // Flash to death color
+            for (int i = 0; i < rends.Count; i++)
+            {
+                var r = rends[i];
+                if (!r) continue;
+                r.GetPropertyBlock(mpb);
+                mpb.SetColor(ColorProp, deathFlashColor);
+                r.SetPropertyBlock(mpb);
+            }
+
+            // Wait for flash duration
+            yield return new WaitForSeconds(deathFlashDuration);
+
+            // Restore original colors
+            for (int i = 0; i < rends.Count; i++)
+            {
+                var r = rends[i];
+                if (!r) continue;
+                r.GetPropertyBlock(mpb);
+                mpb.SetColor(ColorProp, originals[i]);
+                r.SetPropertyBlock(mpb);
+            }
+        }
+
+        // Continue with death sequence
+        CompleteDeath();
+    }
+
+    void CompleteDeath()
+    {
+        Debug.Log("[KrakenHealth] Completing death sequence and triggering victory!");
+
+        // disable gameplay bits
+        if (disableOnDeath != null)
+            for (int i = 0; i < disableOnDeath.Length; i++)
+                if (disableOnDeath[i]) disableOnDeath[i].enabled = false;
+
+        if (collidersOnBody != null)
+            for (int i = 0; i < collidersOnBody.Length; i++)
+                if (collidersOnBody[i]) collidersOnBody[i].enabled = false;
+
+        // Trigger death event (this will call OnWin.TriggerVictory if subscribed)
+        onDeath?.Invoke();
+
+        // trigger your upward exit animation
+        if (krakenDeath) krakenDeath.TriggerDeath();
+        else Destroy(gameObject); // fallback
     }
 
     IEnumerator Co_IFrames()
@@ -254,6 +344,15 @@ public class KrakenHealth : MonoBehaviour
             // Optionally set full-white:
             // mpb.SetColor(ColorProp, Color.white);
             r.SetPropertyBlock(mpb);
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Clean up event subscription to prevent memory leaks
+        if (onWinScript != null)
+        {
+            onDeath.RemoveListener(onWinScript.TriggerVictory);
         }
     }
 }

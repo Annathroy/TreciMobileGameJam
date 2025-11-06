@@ -39,6 +39,9 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
     [Tooltip("Delay before spawning new enemies after detecting none in scene")]
     [SerializeField] float respawnDelay = 2f;
 
+    [Header("Debug")]
+    [SerializeField] bool enableDebugLogs = true;
+
     EnemyUnit a, b;
     BeamLink beam;
 
@@ -110,6 +113,9 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
         if ((a == null || !a.gameObject.activeInHierarchy) &&
             (b == null || !b.gameObject.activeInHierarchy))
         {
+            if (enableDebugLogs)
+                Debug.Log("[EnemyBeam] Both enemies destroyed, respawning...");
+
             // Clean up beam if it exists
             if (beam != null)
             {
@@ -128,6 +134,9 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
     void BeginMovePhase()
     {
         if (beam) beam.Enable(false);
+
+        if (enableDebugLogs)
+            Debug.Log("[EnemyBeam] Begin Move Phase - Beam OFF");
 
         // Only proceed if we have valid enemies
         if (a == null || b == null) return;
@@ -151,6 +160,9 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
         if (beam) beam.Enable(true);                // "shooting" = beam on
         phaseEndsAt = Time.time + beamDuration;
         state = State.Shooting;
+
+        if (enableDebugLogs)
+            Debug.Log($"[EnemyBeam] Begin Shooting Phase - Beam ON for {beamDuration} seconds");
     }
 
     void BeginPostPause()
@@ -158,6 +170,9 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
         if (beam) beam.Enable(false);               // stop shooting
         phaseEndsAt = Time.time + Mathf.Max(0f, postBeamPause);
         state = State.PostPause;
+
+        if (enableDebugLogs)
+            Debug.Log("[EnemyBeam] Begin Post Pause - Beam OFF");
     }
 
     void RetargetAndMove()
@@ -196,6 +211,12 @@ public class EnemyBeamPhoneEdgeEncounter : MonoBehaviour
         beam.a = a.transform;
         beam.b = b.transform;
         beam.Enable(false);
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"[EnemyBeam] Spawned pair: Left at {spawnLeft}, Right at {spawnRight}");
+            Debug.Log($"[EnemyBeam] Beam connected between {beam.a.name} and {beam.b.name}");
+        }
     }
 
     // Convert a viewport X edge to world X at given Z (ortho or perspective)

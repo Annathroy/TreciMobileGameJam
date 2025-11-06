@@ -1587,12 +1587,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KrakenDeath
   cam: {fileID: 0}
   planeNormal: {x: 0, y: 1, z: 0}
-  directionMode: 0
-  customDirection: {x: 0, y: 0, z: 1}
+  directionMode: 1
+  customDirection: {x: 0, y: 0, z: 20}
   moveSpeed: 2
   maxDuration: 8
   viewportOvershoot: 0.08
   followCameraDuringDeath: 0
+  use3DMovement: 1
   shakeAmplitude: 0.35
   shakeFrequency: 12
   shakeDampen:
@@ -1635,7 +1636,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0d3c8e42fe06fc4a867477f86b01193, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KrakenHealth
-  maxHP: 350
+  maxHP: 175
   currentHP: 0
   iFrameDuration: 0.4
   damageLayers:
@@ -1646,12 +1647,16 @@ MonoBehaviour:
   contactDamage: 10
   destroyHitObject: 1
   knockback: 0
-  flashOnHit: 1
-  flashColor: {r: 1, g: 0.25, b: 0.25, a: 1}
-  flashInterval: 0.06
+  flashOnHit: 0
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  flashInterval: 0.001
+  flashOnDeath: 0
+  deathFlashColor: {r: 0.9, g: 0.9, b: 0.9, a: 1}
+  deathFlashDuration: 0.3
   disableOnDeath: []
   collidersOnBody: []
-  krakenDeath: {fileID: 1270717741797922565}
+  krakenDeath: {fileID: 0}
+  autoSubscribeToVictory: 1
   onHpChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1660,19 +1665,7 @@ MonoBehaviour:
       m_Calls: []
   onDeath:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1270717741797922565}
-        m_TargetAssemblyTypeName: KrakenDeath, Assembly-CSharp
-        m_MethodName: TriggerDeath
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &5546692361866192693
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1687,6 +1680,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KrakenInkAttack
   inkProjectilePrefab: {fileID: 126674292165737331, guid: 00ccc1ee66c56c547af062d9f4f0ce3d, type: 3}
   projectileSpeed: 8
+  projectileLifetime: 5
   attackCooldown: 3
   projectileSpawnPoint: {fileID: 4710772838738231424}
   inkSplatterPrefab: {fileID: 7235918939341260820, guid: 816d5cbcc04b71b48bf60ebbb7e53eb2, type: 3}

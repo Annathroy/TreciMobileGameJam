@@ -27,6 +27,12 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
     [SerializeField] private float markerFlashHz = 6f;
     [SerializeField] private bool markerPreserveAspect = true;
 
+    [Header("Marker Size")]
+    [SerializeField, Tooltip("Width multiplier relative to canvas width (0.35 = 35% of canvas width).")]
+    private float markerWidthMultiplier = 0.25f;
+    [SerializeField, Tooltip("Height multiplier relative to canvas height (0.15 = 15% of canvas height).")]
+    private float markerHeightMultiplier = 0.1f;
+
     [Header("Shark (world-space)")]
     [SerializeField] private GameObject sharkPrefab;
     [SerializeField] private Camera mainCam;
@@ -68,7 +74,7 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
 
     IEnumerator BeginAfterDelay()
     {
-        // Don’t start while paused
+        // Don't start while paused
         yield return WaitUntilUnpaused();
 
         // Idle before the first attack (whichever is greater)
@@ -111,7 +117,8 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0f);
         rt.pivot = new Vector2(0.5f, 0f);
 
-        rt.sizeDelta = new Vector2(canvasRT.rect.width * 0.35f, canvasRT.rect.height * 0.15f);
+        // Use configurable size multipliers instead of hardcoded values
+        rt.sizeDelta = new Vector2(canvasRT.rect.width * markerWidthMultiplier, canvasRT.rect.height * markerHeightMultiplier);
         rt.anchoredPosition = new Vector2(0f, 40f);
 
         return img;

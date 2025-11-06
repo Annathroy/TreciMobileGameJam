@@ -3,20 +3,22 @@
 [DisallowMultipleComponent]
 public class KrakenDeath : MonoBehaviour
 {
-    public enum DirectionMode { CameraUpOnPlane, WorldAxisZ, WorldAxisY, Custom }
+    public enum DirectionMode { CameraUpOnPlane, WorldAxisZ, WorldAxisY, Custom, WorldUp }
 
     [Header("Refs")]
     [SerializeField] Camera cam;                             // if null => Camera.main
     [SerializeField] Vector3 planeNormal = Vector3.up;       // XZ gameplay => Vector3.up
 
     [Header("Motion")]
-    [SerializeField] DirectionMode directionMode = DirectionMode.CameraUpOnPlane;
-    [SerializeField] Vector3 customDirection = Vector3.forward;
-    [SerializeField] float moveSpeed = 2.0f;
+    [SerializeField] DirectionMode directionMode = DirectionMode.WorldUp;
+    [SerializeField] Vector3 customDirection = new Vector3(0, 1, 0);
+    [SerializeField] float moveSpeed = 8.0f;
     [SerializeField] float maxDuration = 8f;
-    [SerializeField] float viewportOvershoot = 0.08f;
+    [SerializeField] float viewportOvershoot = 0.2f;
     [Tooltip("Recompute direction each frame (if camera moves/rotates during death).")]
     [SerializeField] bool followCameraDuringDeath = false;
+    [Tooltip("Use true 3D movement instead of projecting onto gameplay plane.")]
+    [SerializeField] bool use3DMovement = true;
 
     [Header("Shake")]
     [SerializeField] float shakeAmplitude = 0.35f;           // in-plane world units
@@ -32,7 +34,7 @@ public class KrakenDeath : MonoBehaviour
     // --- internals (all cached; no GC after start) ---
     bool _running;
     Vector3 _pos;
-    Vector3 _dir;                    // offscreen direction on the plane
+    Vector3 _dir;                    // offscreen direction
     Vector3 _axisA, _axisB;          // in-plane orthonormal basis for shake
     float _seedA, _seedB;            // shake phase seeds
     float _targetViewportY;          // 1f + overshoot
@@ -49,6 +51,8 @@ public class KrakenDeath : MonoBehaviour
     {
         if (_running) return;
         _running = true;
+
+        Debug.Log("[KrakenDeath] Death triggered!");
 
         // Disable gameplay systems
         if (disableBehaviours != null) for (int i = 0; i < disableBehaviours.Length; i++)
@@ -73,8 +77,22 @@ public class KrakenDeath : MonoBehaviour
         // precompute plane basis + initial direction
         planeNormal = planeNormal.sqrMagnitude > 0f ? planeNormal.normalized : Vector3.up;
         BuildBasis(planeNormal, out _axisA, out _axisB);
-        _dir = ComputeDirection().normalized;
-        if (_dir.sqrMagnitude < 1e-6f) _dir = _axisB; // fallback
+        _dir = ComputeDirection();
+
+        // For true 3D movement, don't project onto plane
+        if (!use3DMovement)
+        {
+            _dir = _dir.normalized;
+        }
+        else
+        {
+            // Use the raw direction for true 3D movement
+            _dir = _dir.sqrMagnitude > 1e-6f ? _dir.normalized : Vector3.up;
+        }
+
+        if (_dir.sqrMagnitude < 1e-6f) _dir = Vector3.up; // fallback to up
+
+        Debug.Log($"[KrakenDeath] Moving in direction: {_dir}, Speed: {moveSpeed}");
 
         StopAllCoroutines();
         StartCoroutine(Co_Death());
@@ -93,7 +111,14 @@ public class KrakenDeath : MonoBehaviour
             if (followCameraDuringDeath)
             {
                 var d = ComputeDirection();
-                if (d.sqrMagnitude > 1e-6f) _dir = d.normalized;
+                if (!use3DMovement)
+                {
+                    if (d.sqrMagnitude > 1e-6f) _dir = d.normalized;
+                }
+                else
+                {
+                    if (d.sqrMagnitude > 1e-6f) _dir = d.normalized;
+                }
             }
 
             // Integrate forward motion (offscreen / screen-up)
@@ -114,15 +139,25 @@ public class KrakenDeath : MonoBehaviour
                 transform.position = _pos;
             }
 
-            // Offscreen check (viewport space)
+            // Enhanced offscreen check (viewport space)
             if (cam)
             {
                 Vector3 vp = cam.WorldToViewportPoint(transform.position);
-                if (vp.z > 0f && vp.y > _targetViewportY) break;
+                Debug.Log($"[KrakenDeath] Viewport position: {vp}, Target Y: {_targetViewportY}");
+
+                // Check if completely outside viewport bounds
+                if (vp.z > 0f && (vp.y > _targetViewportY || vp.y < -viewportOvershoot ||
+                    vp.x > 1f + viewportOvershoot || vp.x < -viewportOvershoot))
+                {
+                    Debug.Log("[KrakenDeath] Kraken moved outside camera bounds, stopping movement.");
+                    break;
+                }
             }
 
             yield return null;
         }
+
+        Debug.Log("[KrakenDeath] Death animation complete, starting destruction sequence.");
 
         // Small polish drift
         float driftT = 0f, driftDur = 0.25f;
@@ -142,31 +177,65 @@ public class KrakenDeath : MonoBehaviour
     {
         switch (directionMode)
         {
+            case DirectionMode.WorldUp:
+                {
+                    return Vector3.up; // Pure upward movement
+                }
             case DirectionMode.CameraUpOnPlane:
                 {
                     if (!cam) cam = Camera.main;
                     Vector3 up = cam ? cam.transform.up : Vector3.forward; // safe fallback
-                                                                           // Project 'up' onto plane: up - (up·n) n
-                    Vector3 d = up - Vector3.Dot(up, planeNormal) * planeNormal;
-                    if (d.sqrMagnitude < 1e-6f) d = _axisB; // avoid degenerate
-                    return d;
+
+                    if (use3DMovement)
+                    {
+                        return up; // Use camera's up direction directly
+                    }
+                    else
+                    {
+                        // Project 'up' onto plane: up - (up·n) n
+                        Vector3 d = up - Vector3.Dot(up, planeNormal) * planeNormal;
+                        if (d.sqrMagnitude < 1e-6f) d = _axisB; // avoid degenerate
+                        return d;
+                    }
                 }
             case DirectionMode.WorldAxisZ:
                 {
-                    Vector3 d = Vector3.forward - Vector3.Dot(Vector3.forward, planeNormal) * planeNormal;
-                    return d;
+                    if (use3DMovement)
+                    {
+                        return Vector3.forward;
+                    }
+                    else
+                    {
+                        Vector3 d = Vector3.forward - Vector3.Dot(Vector3.forward, planeNormal) * planeNormal;
+                        return d;
+                    }
                 }
             case DirectionMode.WorldAxisY:
                 {
-                    Vector3 d = Vector3.up - Vector3.Dot(Vector3.up, planeNormal) * planeNormal;
-                    return d;
+                    if (use3DMovement)
+                    {
+                        return Vector3.up;
+                    }
+                    else
+                    {
+                        Vector3 d = Vector3.up - Vector3.Dot(Vector3.up, planeNormal) * planeNormal;
+                        return d;
+                    }
                 }
             case DirectionMode.Custom:
             default:
                 {
-                    Vector3 v = customDirection.sqrMagnitude > 0f ? customDirection : Vector3.forward;
-                    Vector3 d = v - Vector3.Dot(v, planeNormal) * planeNormal;
-                    return d;
+                    Vector3 v = customDirection.sqrMagnitude > 0f ? customDirection : Vector3.up;
+
+                    if (use3DMovement)
+                    {
+                        return v; // Use custom direction directly
+                    }
+                    else
+                    {
+                        Vector3 d = v - Vector3.Dot(v, planeNormal) * planeNormal;
+                        return d;
+                    }
                 }
         }
     }
@@ -181,6 +250,6 @@ public class KrakenDeath : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    
+
 #endif
 }

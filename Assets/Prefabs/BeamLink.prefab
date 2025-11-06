@@ -157,6 +157,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BeamLink
   a: {fileID: 0}
   b: {fileID: 0}
+  renderMode: 1
+  beamSprite: {fileID: 21300000, guid: b8f23468990f2684bab91271f2746783, type: 3}
+  spriteMaterial: {fileID: 0}
+  periodicBeam: 1
+  activeTime: 1
+  inactiveTime: 3
+  initialDelay: 2
   beamRadius: 0.15
   lineWidth: 0.08
   playerMask:
@@ -164,3 +171,13 @@ MonoBehaviour:
     m_Bits: 256
   damagePerTick: 1
   tickInterval: 0.2
+  spriteWidth: 1
+  spriteSegmentsPerUnit: 2
+  sortingOrder: 20
+  sortingLayerName: Default
+  useSingleSprite: 1
+  enableDebugLogs: 1
+  forceVisible: 1
+  debugColor: {r: 1, g: 1, b: 1, a: 1}
+  useManualRotation: 0
+  manualRotation: {x: 90, y: 0, z: 0}

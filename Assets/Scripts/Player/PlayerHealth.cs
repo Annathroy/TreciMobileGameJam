@@ -10,6 +10,10 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private int maxLives = 4; // hard-cap at 4
     [SerializeField] private int lives;        // initialized in Awake to maxLives
 
+    [Header("God Mode")]
+    [Tooltip("When enabled, player takes no damage from any source.")]
+    [SerializeField] private bool godMode = false;
+
     [Header("Damage Sources (by Tag)")]
     [SerializeField] private string enemyTag = "Enemy";
     [SerializeField] private string enemyProjectileTag = "EnemyProjectile";
@@ -55,7 +59,7 @@ public class PlayerHealth : MonoBehaviour
     // PUBLIC: direct damage API (use this from other scripts if needed)
     public void ApplyDamage(int amount)
     {
-        if (amount <= 0 || invulnerable || lives <= 0) return;
+        if (amount <= 0 || invulnerable || lives <= 0 || godMode) return;
 
         lives = Mathf.Max(0, lives - amount);
         RefreshHearts();
@@ -79,6 +83,20 @@ public class PlayerHealth : MonoBehaviour
         invulnRoutine = StartCoroutine(InvulnerabilityFlash(seconds, flashInterval));
     }
 
+    // PUBLIC: God Mode control
+    public void SetGodMode(bool enabled)
+    {
+        godMode = enabled;
+        Debug.Log($"[PlayerHealth] God Mode {(enabled ? "ENABLED" : "DISABLED")}");
+    }
+
+    public void ToggleGodMode()
+    {
+        SetGodMode(!godMode);
+    }
+
+    public bool IsGodModeActive => godMode;
+
     private void Die()
     {
         if (invulnRoutine != null) StopCoroutine(invulnRoutine);
@@ -90,7 +108,7 @@ public class PlayerHealth : MonoBehaviour
     // ---- collision handling (3D) ----
     private void OnTriggerEnter(Collider other)
     {
-        if (invulnerable || lives <= 0) return;
+        if (invulnerable || lives <= 0 || godMode) return;
 
         if (other.CompareTag(enemyTag))
         {
@@ -105,7 +123,7 @@ public class PlayerHealth : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (invulnerable || lives <= 0) return;
+        if (invulnerable || lives <= 0 || godMode) return;
 
         var other = collision.collider;
         if (other.CompareTag(enemyTag))
