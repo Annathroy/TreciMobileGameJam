@@ -5,14 +5,10 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class SharkTelegraphBottomCenter : MonoBehaviour
 {
-
-    // add field
-    [SerializeField] private float firstAttackDelay = 2f;
-    IEnumerator BeginAfterDelay()
-    {
-        if (firstAttackDelay > 0f) yield return WaitSmart(firstAttackDelay);
-        loopCo = StartCoroutine(Loop());
-    }
+    [Header("Start")]
+    [SerializeField] private float firstAttackDelay = 2f;   // legacy field
+    [SerializeField, Tooltip("Extra idle time before the *first* attack after enabling.")]
+    private float initialIdleTime = 6f;
 
     [Header("Timing")]
     [SerializeField] private float cycleInterval = 6f;
@@ -20,7 +16,7 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
     [SerializeField] private float appearDuration = 0.5f;
     [SerializeField] private float stayDuration = 1.5f;
     [SerializeField] private float retreatDuration = 0.6f;
-    [SerializeField] private bool useUnscaledTime = true;
+    [SerializeField] private bool useUnscaledTime = true; // freeze-safe via Delta()
 
     [Header("UI Telegraph")]
     [SerializeField] private Canvas rootCanvas;
@@ -42,6 +38,11 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
     [SerializeField] private float sharkScaleMultiplier = 2.5f;
     [SerializeField] private Vector3 prefabExtraEuler = new Vector3(0f, 180f, 0f);
     [SerializeField] private bool destroyOnExit = true;
+
+    [Header("Damage on Appear")]
+    [SerializeField] private int contactDamage = 1;
+    [SerializeField, Tooltip("XZ radius around the shark when it surfaces that will hit the player once.")]
+    private float damageRadius = 2.0f;
 
     private RectTransform canvasRT;
     private Coroutine loopCo;
@@ -65,6 +66,18 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
         if (loopCo != null) { StopCoroutine(loopCo); loopCo = null; }
     }
 
+    IEnumerator BeginAfterDelay()
+    {
+        // Don’t start while paused
+        yield return WaitUntilUnpaused();
+
+        // Idle before the first attack (whichever is greater)
+        float delay = Mathf.Max(initialIdleTime, firstAttackDelay);
+        if (delay > 0f) yield return WaitSmart(delay);
+
+        loopCo = StartCoroutine(Loop());
+    }
+
     IEnumerator Loop()
     {
         while (true)
@@ -72,10 +85,12 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
             Image marker = SpawnMarker();
             if (markerFlashA || markerFlashB)
                 StartCoroutine(FlashMarker(marker, warnDuration));
+
             yield return WaitSmart(warnDuration);
+
             if (marker) Destroy(marker.gameObject);
 
-            yield return StartCoroutine(SpawnAndAnimateShark());
+            yield return SpawnAndAnimateShark();
 
             yield return WaitSmart(Mathf.Max(0f, cycleInterval - warnDuration));
         }
@@ -87,6 +102,8 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
         img.color = markerTint;
         img.raycastTarget = false;
         img.preserveAspect = markerPreserveAspect;
+        img.transform.SetAsLastSibling();
+
         if (markerFlashA) img.sprite = markerFlashA;
 
         var rt = img.rectTransform;
@@ -94,10 +111,8 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0f);
         rt.pivot = new Vector2(0.5f, 0f);
 
-        // --- smaller marker ---
         rt.sizeDelta = new Vector2(canvasRT.rect.width * 0.35f, canvasRT.rect.height * 0.15f);
         rt.anchoredPosition = new Vector2(0f, 40f);
-        // -----------------------
 
         return img;
     }
@@ -112,6 +127,7 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
     IEnumerator FlashMarker(Image img, float seconds)
     {
         if (!img) yield break;
+
         float elapsed = 0f;
         float halfPeriod = 0.5f / Mathf.Max(0.01f, markerFlashHz);
         Sprite a = markerFlashA;
@@ -121,8 +137,7 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
         while (elapsed < seconds && img)
         {
             img.sprite = (img.sprite == a) ? b : a;
-            yield return useUnscaledTime ? new WaitForSecondsRealtime(halfPeriod)
-                                         : new WaitForSeconds(halfPeriod);
+            yield return WaitSmart(halfPeriod);
             elapsed += halfPeriod;
         }
     }
@@ -131,6 +146,7 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
     {
         if (!sharkPrefab || !mainCam) yield break;
 
+        // bottom center of screen, same Y plane
         Vector2 screenPos = new Vector2(Screen.width * 0.5f, 40f);
         Vector3 baseWorld = ScreenToWorldOnPlane(screenPos, attackPlaneY);
 
@@ -141,16 +157,23 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
         GameObject shark = Instantiate(sharkPrefab, spawnPos, Quaternion.identity);
         shark.transform.rotation = Quaternion.Euler(prefabExtraEuler);
         shark.transform.localScale *= sharkScaleMultiplier;
+        shark.transform.SetAsLastSibling();
 
         // rise
         float t = 0f;
         while (t < appearDuration && shark)
         {
-            t += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-            shark.transform.position = Vector3.Lerp(spawnPos, appearPos, t / appearDuration);
+            float d = Delta();
+            t += d;
+            float k = (appearDuration <= 0f) ? 1f : Mathf.Clamp01(t / appearDuration);
+            shark.transform.position = Vector3.Lerp(spawnPos, appearPos, k);
             shark.transform.position = new Vector3(shark.transform.position.x, attackPlaneY, shark.transform.position.z);
             yield return null;
         }
+
+        // one-time contact damage at the moment it surfaces
+        if (shark)
+            TryDealContactDamage(appearPos);
 
         // stay
         yield return WaitSmart(stayDuration);
@@ -159,13 +182,29 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
         t = 0f;
         while (t < retreatDuration && shark)
         {
-            t += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-            shark.transform.position = Vector3.Lerp(appearPos, retreatPos, t / retreatDuration);
+            float d = Delta();
+            t += d;
+            float k = (retreatDuration <= 0f) ? 1f : Mathf.Clamp01(t / retreatDuration);
+            shark.transform.position = Vector3.Lerp(appearPos, retreatPos, k);
             shark.transform.position = new Vector3(shark.transform.position.x, attackPlaneY, shark.transform.position.z);
             yield return null;
         }
 
         if (destroyOnExit && shark) Destroy(shark);
+    }
+
+    void TryDealContactDamage(Vector3 center)
+    {
+        var hits = Physics.OverlapSphere(center + Vector3.up * 0.1f, damageRadius, ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            var ph = hits[i].GetComponentInParent<PlayerHealth>();
+            if (ph != null)
+            {
+                ph.ApplyDamage(contactDamage);
+                break; // only once
+            }
+        }
     }
 
     Vector3 ScreenToWorldOnPlane(Vector2 pixelPos, float planeY)
@@ -176,9 +215,38 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
         return mainCam.ScreenToWorldPoint(new Vector3(pixelPos.x, pixelPos.y, 10f));
     }
 
+    // ---- Pause-aware time helpers ----
+    float Delta()
+    {
+        if (Time.timeScale == 0f) return 0f; // freeze when paused
+        return useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+    }
+
     IEnumerator WaitSmart(float seconds)
     {
-        if (useUnscaledTime) yield return new WaitForSecondsRealtime(seconds);
-        else yield return new WaitForSeconds(seconds);
+        float t = seconds;
+        while (t > 0f)
+        {
+            float d = Delta();
+            yield return null;
+            t -= d;
+        }
     }
+
+    IEnumerator WaitUntilUnpaused()
+    {
+        while (Time.timeScale == 0f) yield return null;
+    }
+
+#if UNITY_EDITOR
+    void OnDrawGizmosSelected()
+    {
+        if (!mainCam) mainCam = Camera.main;
+        Gizmos.color = new Color(1f, 0f, 0f, 0.35f);
+        Vector2 screenPos = new Vector2(Screen.width * 0.5f, 40f);
+        Vector3 baseWorld = mainCam ? ScreenToWorldOnPlane(screenPos, attackPlaneY) : Vector3.zero;
+        Vector3 appearPos = baseWorld - Vector3.forward * spawnBelowOffset + Vector3.forward * appearHeight;
+        Gizmos.DrawWireSphere(new Vector3(appearPos.x, attackPlaneY, appearPos.z), damageRadius);
+    }
+#endif
 }

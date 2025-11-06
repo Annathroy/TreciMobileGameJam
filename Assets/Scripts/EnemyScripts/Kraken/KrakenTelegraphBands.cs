@@ -14,15 +14,15 @@ public class KrakenTelegraphBands : MonoBehaviour
 
     [Header("Timing")]
     [SerializeField] private float cycleInterval = 5f;       // total cycle
-    [SerializeField] private float warnDuration = 1.5f;     // telegraph on screen
-    [SerializeField] private bool useUnscaledTime = true;   // ignore Time.timeScale
+    [SerializeField] private float warnDuration = 1.5f;      // telegraph on screen
+    [SerializeField] private bool useUnscaledTime = true;    // ignore Time.timeScale (but still freeze when paused)
 
     [Header("UI (Screen Space)")]
     [SerializeField] private Canvas rootCanvas;
     [SerializeField] private Image markerPrefab;
     [SerializeField] private Color markerColor = new Color(1f, 0f, 0f, 0.6f);
 
-    // --- NEW: flashing sprites / options ---
+    // flashing sprites / options
     [SerializeField] private Sprite markerFlashA;            // assign PNG A
     [SerializeField] private Sprite markerFlashB;            // assign PNG B
     [SerializeField, Tooltip("How many swaps per second (A↔B↔A...)")]
@@ -31,7 +31,6 @@ public class KrakenTelegraphBands : MonoBehaviour
     private bool markerPreserveAspect = true;
     [SerializeField, Tooltip("If true, set native size on the image instead of cell size.")]
     private bool markerUseNativeSize = false;
-    // --------------------------------------
 
     [Header("Tentacle (world-space)")]
     [SerializeField] private GameObject tentaclePrefab;      // pivot at base
@@ -43,8 +42,8 @@ public class KrakenTelegraphBands : MonoBehaviour
     [Header("Stab Animation")]
     [SerializeField] private bool debugFreezeAtPeak = false;
     public enum Axis { X, Y, Z }
-    [SerializeField] private Axis lengthAxis = Axis.Z;     // default; may be overridden
-    [SerializeField] private float extendTime = 0.35f;      // slower = clearer
+    [SerializeField] private Axis lengthAxis = Axis.Z;       // default; may be overridden
+    [SerializeField] private float extendTime = 0.35f;       // slower = clearer
     [SerializeField] private float holdTime = 0.30f;
     [SerializeField] private float retractTime = 0.50f;
     [SerializeField, Tooltip("Global playback multiplier. 1=normal, 0.5=slower, 2=faster")]
@@ -74,7 +73,7 @@ public class KrakenTelegraphBands : MonoBehaviour
     [SerializeField, Tooltip("Ignore auto/row rules and use a fixed axis for length scaling.")]
     private bool overrideLengthAxis = false;
 
-    [SerializeField, Tooltip("Axis to scale as LENGTH *after* prefab-forward fix.\nIf your mesh's long side is Y in the prefab, set Prefab Forward Axis = Y and set this to Z.")]
+    [SerializeField, Tooltip("Axis to scale as LENGTH *after* prefab-forward fix.")]
     private Axis overrideAxis = Axis.Z;
 
     [Header("Spawn Padding (screen px)")]
@@ -96,11 +95,11 @@ public class KrakenTelegraphBands : MonoBehaviour
 
     private struct MarkerInfo
     {
-        public RectTransform rt;        // for cleanup
+        public RectTransform rt;
         public BandType type;
         public int index;
         public Side side;
-        public Vector2 screenCenterPx;  // cached (Canvas-scaler safe)
+        public Vector2 screenCenterPx;
     }
 
     void Awake()
@@ -138,10 +137,9 @@ public class KrakenTelegraphBands : MonoBehaviour
             int index = Random.Range(minRow, maxRowExclusive);
             var m = SpawnMarker(BandType.Row, index);
 
-            // flashing runs during this warn window
             yield return WaitSmart(warnDuration);
 
-            if (m.rt) Destroy(m.rt.gameObject); // safe, position cached
+            if (m.rt) Destroy(m.rt.gameObject);
 
             FireTentacleStab(m);
 
@@ -158,9 +156,10 @@ public class KrakenTelegraphBands : MonoBehaviour
         img.color = markerColor;
         img.raycastTarget = false;
         img.preserveAspect = markerPreserveAspect;
-
-        // pick initial sprite if provided
         if (markerFlashA) img.sprite = markerFlashA;
+
+        // ⬇️ ensure UI marker is on top of hierarchy
+        img.transform.SetAsLastSibling();
 
         var rt = img.rectTransform;
         rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.zero; rt.pivot = Vector2.zero;
@@ -169,14 +168,8 @@ public class KrakenTelegraphBands : MonoBehaviour
         float cellW = w / Mathf.Max(1, cols);
         float cellH = h / Mathf.Max(1, rows);
 
-        if (markerUseNativeSize && img.sprite)
-        {
-            img.SetNativeSize();
-        }
-        else
-        {
-            rt.sizeDelta = new Vector2(cellW * 0.5f, cellH * 0.5f);
-        }
+        if (markerUseNativeSize && img.sprite) img.SetNativeSize();
+        else rt.sizeDelta = new Vector2(cellW * 0.5f, cellH * 0.5f);
 
         var info = new MarkerInfo { rt = rt, type = type, index = index, side = Side.Top };
 
@@ -199,10 +192,7 @@ public class KrakenTelegraphBands : MonoBehaviour
 
         info.screenCenterPx = GetMarkerCenterScreenPx(rt, rootCanvas);
 
-        // --- NEW: kick off flashing for the warn window ---
-        if (markerFlashA || markerFlashB)
-            StartCoroutine(FlashMarker(img, warnDuration));
-        // --------------------------------------------------
+        if (markerFlashA || markerFlashB) StartCoroutine(FlashMarker(img, warnDuration));
 
         return info;
     }
@@ -211,38 +201,27 @@ public class KrakenTelegraphBands : MonoBehaviour
     {
         var go = new GameObject("KrakenMarker", typeof(RectTransform), typeof(Image));
         go.transform.SetParent(rootCanvas.transform, false);
-        var img = go.GetComponent<Image>();
-        img.preserveAspect = markerPreserveAspect;
-        return img;
+        return go.GetComponent<Image>();
     }
 
-    // --- NEW: flashing coroutine (A <-> B) ---
     IEnumerator FlashMarker(Image img, float seconds)
     {
         if (!img) yield break;
 
         float elapsed = 0f;
-        float halfPeriod = 0.5f / Mathf.Max(0.01f, markerFlashHz); // swap twice per period
+        float halfPeriod = 0.5f / Mathf.Max(0.01f, markerFlashHz);
         Sprite a = markerFlashA ? markerFlashA : img.sprite;
-        Sprite b = markerFlashB ? markerFlashB : a;                // fall back to A if B missing
-        bool useRealtime = useUnscaledTime;
+        Sprite b = markerFlashB ? markerFlashB : a; // fallback to A
 
-        // ensure we start on A
         if (a) img.sprite = a;
 
         while (elapsed < seconds && img)
         {
-            // swap
             img.sprite = (img.sprite == a) ? b : a;
-
-            // wait half period
-            if (useRealtime) yield return new WaitForSecondsRealtime(halfPeriod);
-            else yield return new WaitForSeconds(halfPeriod);
-
+            yield return WaitSmart(halfPeriod); // pause-aware
             elapsed += halfPeriod;
         }
     }
-    // ----------------------------------------
 
     void FireTentacleStab(MarkerInfo m)
     {
@@ -303,6 +282,9 @@ public class KrakenTelegraphBands : MonoBehaviour
         }
 
         var go = Instantiate(tentaclePrefab, baseWorld, Quaternion.identity);
+        // ⬇️ keep instance on top (hierarchy order)
+        go.transform.SetAsLastSibling();
+
         var gfx = ResolveGraphic(go.transform, tentacleGraphicRoot, tentacleGraphicChildPath);
 
         Vector3 camUp = mainCam.transform.up;
@@ -342,7 +324,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         float ExtDur() => extendTime / Speed();
         float HoldDur() => holdTime / Speed();
         float RetDur() => retractTime / Speed();
-        float Delta() => useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
 
         void ClampPlaneY()
         {
@@ -351,11 +332,12 @@ public class KrakenTelegraphBands : MonoBehaviour
             go.transform.position = new Vector3(p.x, attackPlaneY, p.z);
         }
 
+        // extend
         float t = 0f, ext = Mathf.Max(0.01f, ExtDur());
         while (t < ext && go)
         {
             t += Delta();
-            float k = Mathf.Clamp01(t / ext);
+            float k = Mathf.Clamp01(ext <= 0f ? 1f : t / ext);
             float f = 1f - (1f - k) * (1f - k);
             float factor = Mathf.Lerp(0f, targetFactor, f);
             Vector3 s = baseScale; SetAxis(ref s, axis, factor * axisBase);
@@ -364,6 +346,7 @@ public class KrakenTelegraphBands : MonoBehaviour
 
         if (go && col && enableDamageOnlyWhenExtended) col.enabled = true;
 
+        // hold (pause-aware)
         float hold = Mathf.Max(minPeakSeconds, HoldDur());
         if (go && (hold > 0f || debugFreezeAtPeak))
         {
@@ -373,11 +356,12 @@ public class KrakenTelegraphBands : MonoBehaviour
 
         if (go && col && enableDamageOnlyWhenExtended) col.enabled = false;
 
+        // retract
         t = 0f; float ret = Mathf.Max(0.01f, RetDur());
         while (t < ret && go)
         {
             t += Delta();
-            float k = Mathf.Clamp01(t / ret);
+            float k = Mathf.Clamp01(ret <= 0f ? 1f : t / ret);
             float f = k * k;
             float factor = Mathf.Lerp(targetFactor, 0f, f);
             Vector3 s = baseScale; SetAxis(ref s, axis, factor * axisBase);
@@ -412,10 +396,8 @@ public class KrakenTelegraphBands : MonoBehaviour
         Vector3 zw = Vector3.ProjectOnPlane(gfx.TransformDirection(Vector3.forward), camNorm).normalized;
 
         float dx = Mathf.Abs(Vector3.Dot(xw, stabDirWorld));
-        float dy = Mathf.Abs(Vector3.Dot(yw, stabDirWorld));
+        float dy = Mathf.Abs(Vector3.Dot(yw, stabDirWorld)) * 0.5f; // bias against Y
         float dz = Mathf.Abs(Vector3.Dot(zw, stabDirWorld));
-
-        dy *= 0.5f;
 
         if (dx >= dy && dx >= dz) return Axis.X;
         if (dz >= dy && dz >= dx) return Axis.Z;
@@ -496,9 +478,21 @@ public class KrakenTelegraphBands : MonoBehaviour
         return mainCam.ScreenToWorldPoint(new Vector3(pixelPos.x, pixelPos.y, 10f));
     }
 
+    // ---- Pause-aware time helpers ----
+    float Delta()
+    {
+        if (Time.timeScale == 0f) return 0f; // freeze when paused
+        return useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+    }
+
     IEnumerator WaitSmart(float seconds)
     {
-        if (useUnscaledTime) yield return new WaitForSecondsRealtime(seconds);
-        else yield return new WaitForSeconds(seconds);
+        float t = seconds;
+        while (t > 0f)
+        {
+            float d = Delta();
+            yield return null;
+            t -= d;
+        }
     }
 }

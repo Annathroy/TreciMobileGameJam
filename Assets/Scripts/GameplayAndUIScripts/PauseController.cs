@@ -1,12 +1,11 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+[DisallowMultipleComponent]
 public class PauseController : MonoBehaviour
 {
     [Header("UI")]
-    [SerializeField] private GameObject pausePanel;     // Assign your Pause Panel (disabled by default)
-
-    [Header("Scenes")]
+    [SerializeField] private GameObject pausePanel; // Assign your Pause Panel (disabled by default)
 
     private bool isPaused = false;
     private float prePauseTimeScale = 1f;
@@ -25,9 +24,8 @@ public class PauseController : MonoBehaviour
         if (isPaused) ForceResume();
     }
 
-    // --- Wired from UI buttons ---
+    // --- UI BUTTONS ---
 
-    // Hook this to your in-game "Pause" button (on the HUD Canvas)
     public void OnPauseButton()
     {
         if (isPaused) return;
@@ -37,42 +35,32 @@ public class PauseController : MonoBehaviour
         Time.timeScale = 0f;
 
         if (pausePanel) pausePanel.SetActive(true);
-
-        // Optional SFX
-        // AudioManager.Instance?.PlaySFX("pause");
     }
 
-    // Hook this to the "Unpause" button in the Pause Panel
     public void OnUnpauseButton()
     {
         if (!isPaused) return;
         isPaused = false;
 
         Time.timeScale = Mathf.Approximately(prePauseTimeScale, 0f) ? 1f : prePauseTimeScale;
-
         if (pausePanel) pausePanel.SetActive(false);
-
-        // Optional SFX
-        // AudioManager.Instance?.PlaySFX("resume");
     }
 
-    // Hook this to the "Back to Main Menu" button in the Pause Panel
-    public void OnBackToMainMenuButton()
+    public void OnRestartButton()
     {
-        // Always restore time before scene change
+        // Ensure clean resume first
         ForceResume();
 
-        if (string.IsNullOrEmpty("StartMenuScene"))
-        {
-            Debug.LogError("[PauseController] mainMenuSceneName not set.");
-            return;
-        }
-
-        SceneManager.LoadScene("StartMenuScene");
+        // Reload current scene
+        Scene current = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(current.name);
     }
 
-    // --- Optional helper if you also want a single toggle button somewhere ---
-
+    public void OnBackToMainMenuButton()
+    {
+        ForceResume();
+        SceneManager.LoadScene("StartMenuScene");
+    }
 
     // --- Internals ---
     private void ForceResume()
