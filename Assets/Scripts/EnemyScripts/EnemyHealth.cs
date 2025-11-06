@@ -127,35 +127,42 @@ public class EnemyHealth : MonoBehaviour
     // ---------- Death ----------
     void Die()
     {
-        if (enableDebugLogs) Debug.Log($"[EnemyHealth] {name} died (proj:{lastHitWasProjectile}).");
+        if (enableDebugLogs)
+            Debug.Log($"[EnemyHealth] {name} died (proj:{lastHitWasProjectile}).");
 
         if (invulnCo != null) { StopCoroutine(invulnCo); invulnCo = null; }
-        SetVisible(true); // ensure visible for any kill VFX snapshot
+        SetVisible(true);
         onDeath?.Invoke();
 
-        // spawn VFX/SFX BEFORE despawn
+        // VFX / SFX first
         if (deathVFX)
         {
             var vfx = Instantiate(deathVFX, transform.position, Quaternion.identity);
             Destroy(vfx, 3f);
         }
-        if (deathSFX) AudioSource.PlayClipAtPoint(deathSFX, transform.position, deathSFXVolume);
+        if (deathSFX)
+            AudioSource.PlayClipAtPoint(deathSFX, transform.position, deathSFXVolume);
 
-        // pool vs disable
+        // --- Manual handling for PufferFish ---
+        // Tag it in Unity as "PufferFish" or ensure its name contains "Puffer"
+        if (CompareTag("PufferFish") || name.Contains("PufferFish"))
+        {
+            gameObject.SetActive(false);
+            return;
+        }
+
+        // --- normal pooled or disable fallback ---
         bool shouldPool = useSharedPool && SharedFishPool.Instance != null &&
                           (!onlyPoolWhenKilledByProjectile || lastHitWasProjectile);
 
         if (shouldPool)
         {
-            // reset hp for next reuse and return to pool
             hp = maxHP;
             SharedFishPool.Instance.Despawn(gameObject, po ? po.SourcePrefab : null);
         }
         else
         {
-            // fallback: just disable (or destroy if you really want)
             gameObject.SetActive(false);
-            // If you prefer hard-destroy instead, replace with: Destroy(gameObject);
         }
     }
 

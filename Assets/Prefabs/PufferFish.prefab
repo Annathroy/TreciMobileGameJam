@@ -211,7 +211,7 @@ GameObject:
   - component: {fileID: -4903366528934686901}
   m_Layer: 0
   m_Name: PufferFish
-  m_TagString: Enemy
+  m_TagString: PufferFish
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -306,7 +306,6 @@ MonoBehaviour:
   - {fileID: 1158919513138484288, guid: d51134d35a9a847428af0b7b972001d1, type: 3}
   dropChances: []
   guaranteedDrop: 0
-  maxDrops: 1
   useWeightedRandomSelection: 1
   overallDropChance: 0.1
   useGlobalDropLimiting: 1
@@ -362,17 +361,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHP: 3
-  hp: 0
+  hp: 3
   acceptProjectileTriggers: 1
   acceptProjectileCollisions: 1
-  enableDebugLogs: 0
   invulnDuration: 0.01
   flashInterval: 0.06
-  destroyOnDeath: 1
-  destroyDelay: 0
   deathVFX: {fileID: 0}
   deathSFX: {fileID: 0}
   deathSFXVolume: 0.9
+  useSharedPool: 1
+  onlyPoolWhenKilledByProjectile: 1
+  enableDebugLogs: 0
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []

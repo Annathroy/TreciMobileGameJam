@@ -3,33 +3,51 @@ using UnityEngine;
 
 public class ObjectPool : MonoBehaviour
 {
-    [SerializeField] private GameObject prefab;
-    [SerializeField] private int poolSize = 10;
+    [SerializeField] GameObject prefab;
+    [SerializeField] int prewarm = 10;
+    [SerializeField] Transform container;
 
-    private Queue<GameObject> pool = new Queue<GameObject>();
+    readonly Queue<GameObject> pool = new Queue<GameObject>();
 
-    private void Awake()
+    void Awake()
     {
-        for (int i = 0; i < poolSize; i++)
+        if (!container)
         {
-            GameObject obj = Instantiate(prefab);
-            obj.SetActive(false);
-            pool.Enqueue(obj);
+            var go = new GameObject($"[Pool] {prefab?.name ?? "Prefab"}");
+            go.transform.SetParent(transform, false);
+            container = go.transform;
+        }
+
+        for (int i = 0; i < prewarm; i++)
+        {
+            var inst = Instantiate(prefab, container);
+            inst.SetActive(false);
+            pool.Enqueue(inst);
         }
     }
 
     public GameObject GetObject()
     {
-        // Always reuse the oldest object in the pool
-        GameObject obj = pool.Dequeue();
-        obj.SetActive(true);
-        pool.Enqueue(obj); // Immediately re-add it to the queue
-        return obj;
+        // Purge destroyed/null entries
+        while (pool.Count > 0)
+        {
+            var go = pool.Dequeue();
+            if (go == null) continue;           // skip dead refs
+            go.SetActive(true);
+            return go;
+        }
+
+        // Pool empty: instantiate new
+        var fresh = Instantiate(prefab, container);
+        fresh.SetActive(true);
+        return fresh;
     }
 
-    public void ReturnObject(GameObject obj)
+    public void Return(GameObject go)
     {
-        // Ensure the object is deactivated but remains in the queue
-        obj.SetActive(false);
+        if (!go) return;                         // already destroyed
+        go.SetActive(false);
+        go.transform.SetParent(container, false);
+        pool.Enqueue(go);
     }
 }
