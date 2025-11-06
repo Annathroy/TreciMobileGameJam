@@ -1379,7 +1379,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 569472122}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1398,13 +1398,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4c867794faf40e4c8166104eba25277, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KrakenTelegraphBands
-  rows: 5
+  rows: 4
   cols: 3
+  rowsAreXBands: 1
   cycleInterval: 3
   warnDuration: 2
+  useUnscaledTime: 1
   rootCanvas: {fileID: 1274455514}
   markerPrefab: {fileID: 1354293167}
   markerColor: {r: 1, g: 0, b: 0, a: 1}
+  tentaclePrefab: {fileID: 124844819815590154, guid: 0f886c39ff3f62a4f814e6f44a5bb00c, type: 3}
+  tentacleGraphicRoot: {fileID: 0}
+  tentacleGraphicChildPath: "tentacle_1/B\xE9zierCircle"
+  mainCam: {fileID: 2013930484}
+  attackPlaneY: 0
+  lengthAxis: 0
+  extendTime: 0.35
+  holdTime: 0.2
+  retractTime: 0.15
+  stabPlaybackSpeed: 0.7
+  minPeakSeconds: 0.25
+  debugFreezeAtPeak: 0
+  minLength: 1
+  extraLengthMargin: 1
+  stabLengthMultiplier: 0.01
+  enableDamageOnlyWhenExtended: 1
+  damageCollider: {fileID: 3907631421790284130, guid: 0f886c39ff3f62a4f814e6f44a5bb00c, type: 3}
+  minVisibleAxisScale: 1
+  prefabForwardAxis: 1
+  prefabExtraEuler: {x: 0, y: 0, z: 0}
+  forceAxisByBand: 1
+  overrideLengthAxis: 1
+  overrideAxis: 1
+  screenEdgePixelPadding: 0
+  excludeTopAndBottomRows: 1
+  enableColumnAttacks: 0
+  logDebug: 1
+  debugLineSeconds: 2
 --- !u!1 &607670810
 GameObject:
   m_ObjectHideFlags: 0
@@ -3768,7 +3798,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPool
   prefab: {fileID: 8997685689680090851, guid: 84537c9a6735df144841667bdc211c17, type: 3}
-  poolSize: 25
+  prewarm: 10
+  container: {fileID: 0}
 --- !u!4 &1852879377
 Transform:
   m_ObjectHideFlags: 0
@@ -3814,7 +3845,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPool
   prefab: {fileID: 8997685689680090851, guid: 3fb202d9bdeff174ab4f6ee61fe96762, type: 3}
-  poolSize: 150
+  prewarm: 10
+  container: {fileID: 0}
 --- !u!4 &1886446897
 Transform:
   m_ObjectHideFlags: 0
@@ -15148,6 +15180,10 @@ PrefabInstance:
     - target: {fileID: 5546692361866192693, guid: 35b16638ec446bb4a970231ef4bf10fe, type: 3}
       propertyPath: projectileLifetime
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8153222018014219166, guid: 35b16638ec446bb4a970231ef4bf10fe, type: 3}
+      propertyPath: maxHP
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 8153222018014219166, guid: 35b16638ec446bb4a970231ef4bf10fe, type: 3}
       propertyPath: flashOnHit
