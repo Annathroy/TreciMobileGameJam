@@ -1591,7 +1591,7 @@ MonoBehaviour:
   customDirection: {x: 0, y: 0, z: 20}
   moveSpeed: 2
   maxDuration: 8
-  viewportOvershoot: 0.08
+  viewportOvershoot: 0.2
   followCameraDuringDeath: 0
   use3DMovement: 1
   shakeAmplitude: 0.35
@@ -1636,7 +1636,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0d3c8e42fe06fc4a867477f86b01193, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KrakenHealth
-  maxHP: 175
+  maxHP: 425
   currentHP: 0
   iFrameDuration: 0.4
   damageLayers:
@@ -1653,6 +1653,13 @@ MonoBehaviour:
   flashOnDeath: 0
   deathFlashColor: {r: 0.9, g: 0.9, b: 0.9, a: 1}
   deathFlashDuration: 0.3
+  changeEyeTexturesOnDeath: 1
+  eyeGameObject: {fileID: 2385253294619855778}
+  eyeRenderers: []
+  deadEyeBaseTexture: {fileID: 2800000, guid: 638a0c7701741cc4ea15e9173a97dcb3, type: 3}
+  deadEyeNormalTexture: {fileID: 2800000, guid: fb28dc1a9f7b379479aff0e082a3af13, type: 3}
+  deadEyeSmoothnessMap: {fileID: 2800000, guid: 2ae6c62bd763c934f8229ed296c25962, type: 3}
+  deadEyeSmoothness: 0.5
   disableOnDeath: []
   collidersOnBody: []
   krakenDeath: {fileID: 0}
@@ -1678,7 +1685,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf4555c678864fe419fbdf92e0186adb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KrakenInkAttack
-  inkProjectilePrefab: {fileID: 126674292165737331, guid: 00ccc1ee66c56c547af062d9f4f0ce3d, type: 3}
+  inkProjectilePrefab: {fileID: 8094353277300265152, guid: 6543e9758b27c774882b7fbc76aad6c3, type: 3}
   projectileSpeed: 8
   projectileLifetime: 5
   attackCooldown: 3

@@ -38,6 +38,22 @@ public class KrakenHealth : MonoBehaviour
     [SerializeField] private Color deathFlashColor = new Color(0.9f, 0.9f, 0.9f, 1f);
     [SerializeField] private float deathFlashDuration = 0.3f;
 
+    [Header("Eye Texture Changes")]
+    [Tooltip("Change eye textures on death.")]
+    [SerializeField] private bool changeEyeTexturesOnDeath = true;
+    [Tooltip("Reference to the Kraken's eye GameObject.")]
+    [SerializeField] private GameObject eyeGameObject;
+    [Tooltip("Renderers that represent the Kraken's eyes (assign manually).")]
+    [SerializeField] private Renderer[] eyeRenderers;
+    [Tooltip("Base texture for dead eyes.")]
+    [SerializeField] private Texture2D deadEyeBaseTexture;
+    [Tooltip("Normal map for dead eyes.")]
+    [SerializeField] private Texture2D deadEyeNormalTexture;
+    [Tooltip("Smoothness map texture for dead eyes.")]
+    [SerializeField] private Texture2D deadEyeSmoothnessMap;
+    [Tooltip("Smoothness value for dead eyes (0-1).")]
+    [SerializeField] private float deadEyeSmoothness = 0.1f;
+
     [Header("Cleanup / Death")]
     [Tooltip("Disable these behaviours on death (AI, nav, attacks…).")]
     [SerializeField] private Behaviour[] disableOnDeath;
@@ -61,7 +77,12 @@ public class KrakenHealth : MonoBehaviour
     Rigidbody rb;
     readonly List<Renderer> rends = new List<Renderer>();
     MaterialPropertyBlock mpb;
+    MaterialPropertyBlock eyeMpb; // Separate MPB for eyes
     static readonly int ColorProp = Shader.PropertyToID("_BaseColor"); // URP/Lit & Unlit use _BaseColor
+    static readonly int BaseMapProp = Shader.PropertyToID("_BaseMap");
+    static readonly int NormalMapProp = Shader.PropertyToID("_BumpMap");
+    static readonly int SmoothnessProp = Shader.PropertyToID("_Smoothness");
+    static readonly int SmoothnessMapProp = Shader.PropertyToID("_MetallicGlossMap"); // URP uses _MetallicGlossMap for smoothness map
     private OnWin onWinScript;
 
     void Awake()
@@ -72,8 +93,16 @@ public class KrakenHealth : MonoBehaviour
         // cache renderers (children too)
         GetComponentsInChildren(true, rends);
         mpb = new MaterialPropertyBlock();
+        eyeMpb = new MaterialPropertyBlock(); // Separate MPB for eyes
 
         currentHP = Mathf.Clamp(currentHP <= 0 ? maxHP : currentHP, 1, maxHP);
+
+        // Subscribe to death event for eye texture changes
+        if (changeEyeTexturesOnDeath)
+        {
+            onDeath.AddListener(ChangeEyeTextures);
+            Debug.Log("[KrakenHealth] Eye texture change listener added to onDeath event.");
+        }
 
         // Don't invoke onHpChanged in Awake to prevent early event triggers
         // onHpChanged?.Invoke(currentHP, maxHP);
@@ -96,8 +125,40 @@ public class KrakenHealth : MonoBehaviour
             }
         }
 
+        // Validate eye setup
+        ValidateEyeSetup();
+
         // Now it's safe to invoke HP changed event
         onHpChanged?.Invoke(currentHP, maxHP);
+    }
+
+    /// <summary>
+    /// Validates the eye texture setup and logs any issues
+    /// </summary>
+    private void ValidateEyeSetup()
+    {
+        Debug.Log($"[KrakenHealth] Validating eye setup:");
+        Debug.Log($"  - changeEyeTexturesOnDeath: {changeEyeTexturesOnDeath}");
+        Debug.Log($"  - eyeGameObject: {(eyeGameObject != null ? eyeGameObject.name : "NULL")}");
+        Debug.Log($"  - eyeRenderers count: {(eyeRenderers != null ? eyeRenderers.Length : 0)}");
+        Debug.Log($"  - deadEyeBaseTexture: {(deadEyeBaseTexture != null ? deadEyeBaseTexture.name : "NULL")}");
+        Debug.Log($"  - deadEyeNormalTexture: {(deadEyeNormalTexture != null ? deadEyeNormalTexture.name : "NULL")}");
+        Debug.Log($"  - deadEyeSmoothnessMap: {(deadEyeSmoothnessMap != null ? deadEyeSmoothnessMap.name : "NULL")}");
+
+        if (eyeRenderers != null)
+        {
+            for (int i = 0; i < eyeRenderers.Length; i++)
+            {
+                if (eyeRenderers[i] != null)
+                {
+                    Debug.Log($"  - Eye Renderer [{i}]: {eyeRenderers[i].name} (Material: {eyeRenderers[i].material?.name ?? "NULL"})");
+                }
+                else
+                {
+                    Debug.LogWarning($"  - Eye Renderer [{i}]: NULL");
+                }
+            }
+        }
     }
 
     // --- public API ---
@@ -131,6 +192,99 @@ public class KrakenHealth : MonoBehaviour
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Public property to access the eye GameObject reference.
+    /// </summary>
+    public GameObject EyeGameObject => eyeGameObject;
+
+    /// <summary>
+    /// Changes the Kraken's eye textures to dead state. Called automatically on death if enabled.
+    /// </summary>
+    private void ChangeEyeTextures()
+    {
+        Debug.Log("[KrakenHealth] ChangeEyeTextures method called!");
+
+        if (!changeEyeTexturesOnDeath)
+        {
+            Debug.LogWarning("[KrakenHealth] Eye texture changes disabled - changeEyeTexturesOnDeath is false");
+            return;
+        }
+
+        if (eyeRenderers == null || eyeRenderers.Length == 0)
+        {
+            Debug.LogError("[KrakenHealth] No eye renderers assigned! Please assign eye renderers in the inspector.");
+            return;
+        }
+
+        Debug.Log($"[KrakenHealth] Processing {eyeRenderers.Length} eye renderers...");
+
+        for (int i = 0; i < eyeRenderers.Length; i++)
+        {
+            var eyeRenderer = eyeRenderers[i];
+            if (!eyeRenderer)
+            {
+                Debug.LogWarning($"[KrakenHealth] Eye renderer [{i}] is null, skipping...");
+                continue;
+            }
+
+            Debug.Log($"[KrakenHealth] Changing textures for eye renderer [{i}]: {eyeRenderer.name}");
+
+            // Use separate MPB for eyes to avoid conflicts with death flash
+            eyeRenderer.GetPropertyBlock(eyeMpb);
+
+            // Log current shader properties
+            var material = eyeRenderer.material;
+            if (material != null)
+            {
+                Debug.Log($"  - Current material: {material.name}");
+                Debug.Log($"  - Current shader: {material.shader.name}");
+            }
+
+            // Set new textures and properties
+            if (deadEyeBaseTexture != null)
+            {
+                eyeMpb.SetTexture(BaseMapProp, deadEyeBaseTexture);
+                Debug.Log($"  - Set base texture: {deadEyeBaseTexture.name}");
+            }
+            else
+            {
+                Debug.LogWarning("  - No dead eye base texture assigned");
+            }
+
+            if (deadEyeNormalTexture != null)
+            {
+                eyeMpb.SetTexture(NormalMapProp, deadEyeNormalTexture);
+                Debug.Log($"  - Set normal texture: {deadEyeNormalTexture.name}");
+            }
+
+            if (deadEyeSmoothnessMap != null)
+            {
+                eyeMpb.SetTexture(SmoothnessMapProp, deadEyeSmoothnessMap);
+                Debug.Log($"  - Set smoothness map: {deadEyeSmoothnessMap.name}");
+            }
+
+            // Set smoothness value
+            eyeMpb.SetFloat(SmoothnessProp, deadEyeSmoothness);
+            Debug.Log($"  - Set smoothness value: {deadEyeSmoothness}");
+
+            // Apply the changes using separate MPB
+            eyeRenderer.SetPropertyBlock(eyeMpb);
+            Debug.Log($"  - Applied eye property block to {eyeRenderer.name}");
+        }
+
+        Debug.Log("[KrakenHealth] Eye texture change complete!");
+    }
+
+    /// <summary>
+    /// Public method to manually test eye texture changes (for debugging)
+    /// </summary>
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    public void TestEyeTextureChange()
+    {
+        Debug.Log("[KrakenHealth] Manual eye texture test triggered!");
+        ChangeEyeTextures();
     }
 
     // --- collisions ---
@@ -220,20 +374,42 @@ public class KrakenHealth : MonoBehaviour
     {
         if (flashOnDeath && rends.Count > 0)
         {
-            // Cache original colors
-            var originals = new Color[rends.Count];
+            // Create a list of renderers that are NOT eye renderers
+            var nonEyeRenderers = new List<Renderer>();
             for (int i = 0; i < rends.Count; i++)
             {
-                var r = rends[i];
+                bool isEyeRenderer = false;
+                if (eyeRenderers != null)
+                {
+                    for (int j = 0; j < eyeRenderers.Length; j++)
+                    {
+                        if (rends[i] == eyeRenderers[j])
+                        {
+                            isEyeRenderer = true;
+                            break;
+                        }
+                    }
+                }
+                if (!isEyeRenderer)
+                {
+                    nonEyeRenderers.Add(rends[i]);
+                }
+            }
+
+            // Cache original colors for non-eye renderers only
+            var originals = new Color[nonEyeRenderers.Count];
+            for (int i = 0; i < nonEyeRenderers.Count; i++)
+            {
+                var r = nonEyeRenderers[i];
                 if (!r) continue;
                 r.GetPropertyBlock(mpb);
                 originals[i] = mpb.GetColor(ColorProp);
             }
 
-            // Flash to death color
-            for (int i = 0; i < rends.Count; i++)
+            // Flash to death color (non-eye renderers only)
+            for (int i = 0; i < nonEyeRenderers.Count; i++)
             {
-                var r = rends[i];
+                var r = nonEyeRenderers[i];
                 if (!r) continue;
                 r.GetPropertyBlock(mpb);
                 mpb.SetColor(ColorProp, deathFlashColor);
@@ -243,10 +419,10 @@ public class KrakenHealth : MonoBehaviour
             // Wait for flash duration
             yield return new WaitForSeconds(deathFlashDuration);
 
-            // Restore original colors
-            for (int i = 0; i < rends.Count; i++)
+            // Restore original colors (non-eye renderers only)
+            for (int i = 0; i < nonEyeRenderers.Count; i++)
             {
-                var r = rends[i];
+                var r = nonEyeRenderers[i];
                 if (!r) continue;
                 r.GetPropertyBlock(mpb);
                 mpb.SetColor(ColorProp, originals[i]);
@@ -272,6 +448,7 @@ public class KrakenHealth : MonoBehaviour
                 if (collidersOnBody[i]) collidersOnBody[i].enabled = false;
 
         // Trigger death event (this will call OnWin.TriggerVictory if subscribed)
+        Debug.Log("[KrakenHealth] Invoking onDeath event...");
         onDeath?.Invoke();
 
         // trigger your upward exit animation
@@ -353,6 +530,11 @@ public class KrakenHealth : MonoBehaviour
         if (onWinScript != null)
         {
             onDeath.RemoveListener(onWinScript.TriggerVictory);
+        }
+
+        if (changeEyeTexturesOnDeath)
+        {
+            onDeath.RemoveListener(ChangeEyeTextures);
         }
     }
 }
