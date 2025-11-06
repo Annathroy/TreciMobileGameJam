@@ -1626,7 +1626,6 @@ MonoBehaviour:
   mainCam: {fileID: 2013930484}
   attackPlaneY: 0
   debugFreezeAtPeak: 0
-  lengthAxis: 0
   extendTime: 0.35
   holdTime: 0.2
   retractTime: 0.15
@@ -2014,10 +2013,34 @@ PrefabInstance:
       propertyPath: m_Name
       value: SimplePool
       objectReference: {fileID: 0}
+    - target: {fileID: 139998922026402744, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 139998922026402744, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
+      propertyPath: m_TagString
+      value: SpikePool
+      objectReference: {fileID: 0}
     - target: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
       propertyPath: prefab
       value: 
-      objectReference: {fileID: 2474032282809868776, guid: 957d46fbad1b54b4e9604427e8b7f9f1, type: 3}
+      objectReference: {fileID: 2474032282809868776, guid: d25fbf870e244fa468f7b6f278f0f514, type: 3}
+    - target: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
+      propertyPath: prewarm
+      value: 128
+      objectReference: {fileID: 0}
+    - target: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
+      propertyPath: lastPrefab
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
+      propertyPath: verboseLogs
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
       propertyPath: parentUnderThis
       value: 1
@@ -2491,23 +2514,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 1048343732}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c4e919cbc106bea44a9d00a17b8fe5fd, type: 3}
+  m_Script: {fileID: 11500000, guid: d97dfec0429afdd47b2c0231247629b4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SharkTelegraphBottomRow
+  m_EditorClassIdentifier: Assembly-CSharp::SharkTelegraphBottomCenter
   firstAttackDelay: 6
-  initialIdleTime: 3
-  cycleInterval: 10
-  warnDuration: 1.2
+  initialIdleTime: 6
+  cycleInterval: 6
+  warnDuration: 1.5
   appearDuration: 0.5
-  stayDuration: 1.25
-  retreatDuration: 0.75
+  stayDuration: 1.5
+  retreatDuration: 0.6
   useUnscaledTime: 1
   rootCanvas: {fileID: 1274455514}
   markerPrefab: {fileID: 0}
   markerTint: {r: 1, g: 0.2, b: 0.2, a: 0.85}
   markerFlashA: {fileID: 21300000, guid: 9ea3b981b0810914f9e1b9d13f796999, type: 3}
   markerFlashB: {fileID: 21300000, guid: bafe309fac66c674cac2e7ea4cb0e5bb, type: 3}
-  markerFlashHz: 4
+  markerFlashHz: 6
   markerPreserveAspect: 1
   sharkPrefab: {fileID: 7544459093520880534, guid: b42e8d29dba41c04688f95c08b248576, type: 3}
   mainCam: {fileID: 2013930484}
@@ -2772,14 +2795,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PufferFish
   spikePool: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
   spikesPerWave: 24
-  inflateScaleMultiplier: 3
+  inflateScaleMultiplier: 1
   inflateTime: 0.15
   inflatedDuration: 0.5
   deflateTime: 0.15
   fireOrigin: {fileID: 0}
+  autoFindSpikePool: 1
+  spikePoolTag: SpikePool
+  requireProjectileInPrefab: 0
   moveSpeed: 7
   moveDelay: 0.5
-  maxJumps: 6
+  maxJumps: 4
   flipModelForward: 1
   attackBoolParameter: isAttacking
   attackTriggerParameter: spikes_out
@@ -3417,6 +3443,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8614043551383704568, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
   m_PrefabInstance: {fileID: 799330653}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1385601243 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
+  m_PrefabInstance: {fileID: 799330653}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 256bc2687d5719040aeb0b0d1a4249cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SimplePool
 --- !u!1001 &1450101717
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3818,14 +3855,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PufferFish
   spikePool: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
   spikesPerWave: 24
-  inflateScaleMultiplier: 3
+  inflateScaleMultiplier: 1
   inflateTime: 0.15
   inflatedDuration: 0.5
   deflateTime: 0.15
   fireOrigin: {fileID: 0}
+  autoFindSpikePool: 1
+  spikePoolTag: SpikePool
+  requireProjectileInPrefab: 0
   moveSpeed: 7
   moveDelay: 0.5
-  maxJumps: 6
+  maxJumps: 4
   flipModelForward: 1
   attackBoolParameter: isAttacking
   attackTriggerParameter: spikes_out
@@ -3975,14 +4015,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PufferFish
   spikePool: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
   spikesPerWave: 24
-  inflateScaleMultiplier: 3
+  inflateScaleMultiplier: 1
   inflateTime: 0.15
   inflatedDuration: 0.5
   deflateTime: 0.15
   fireOrigin: {fileID: 0}
+  autoFindSpikePool: 1
+  spikePoolTag: SpikePool
+  requireProjectileInPrefab: 0
   moveSpeed: 7
   moveDelay: 0.5
-  maxJumps: 6
+  maxJumps: 4
   flipModelForward: 1
   attackBoolParameter: isAttacking
   attackTriggerParameter: spikes_out
@@ -4523,14 +4566,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PufferFish
   spikePool: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
   spikesPerWave: 24
-  inflateScaleMultiplier: 3
+  inflateScaleMultiplier: 1
   inflateTime: 0.15
   inflatedDuration: 0.5
   deflateTime: 0.15
   fireOrigin: {fileID: 0}
+  autoFindSpikePool: 1
+  spikePoolTag: SpikePool
+  requireProjectileInPrefab: 0
   moveSpeed: 7
   moveDelay: 0.5
-  maxJumps: 6
+  maxJumps: 4
   flipModelForward: 1
   attackBoolParameter: isAttacking
   attackTriggerParameter: spikes_out
@@ -15658,6 +15704,18 @@ PrefabInstance:
     - target: {fileID: 3498658688403112512, guid: d77df02f424b55c408427692510bd277, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3562361458165798966, guid: d77df02f424b55c408427692510bd277, type: 3}
+      propertyPath: maxJumps
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3562361458165798966, guid: d77df02f424b55c408427692510bd277, type: 3}
+      propertyPath: spikePool
+      value: 
+      objectReference: {fileID: 1385601243}
+    - target: {fileID: 3562361458165798966, guid: d77df02f424b55c408427692510bd277, type: 3}
+      propertyPath: inflateScaleMultiplier
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

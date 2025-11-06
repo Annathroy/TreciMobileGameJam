@@ -42,7 +42,6 @@ public class KrakenTelegraphBands : MonoBehaviour
     [Header("Stab Animation")]
     [SerializeField] private bool debugFreezeAtPeak = false;
     public enum Axis { X, Y, Z }
-    [SerializeField] private Axis lengthAxis = Axis.Z;       // default; may be overridden
     [SerializeField] private float extendTime = 0.35f;       // slower = clearer
     [SerializeField] private float holdTime = 0.30f;
     [SerializeField] private float retractTime = 0.50f;

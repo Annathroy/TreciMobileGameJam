@@ -1,5 +1,7 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using System.Reflection; // only used if you enable reflection check
 
 public class PufferFish : MonoBehaviour
 {
@@ -12,16 +14,24 @@ public class PufferFish : MonoBehaviour
     [SerializeField] private float deflateTime = 0.15f;
     [SerializeField] private Transform fireOrigin;
 
+    [Header("Auto Spike Pool Discovery")]
+    [Tooltip("If true, will search the scene for the nearest SimplePool to use for spikes when none is assigned or the assigned one is unavailable.")]
+    [SerializeField] private bool autoFindSpikePool = true;
+    [Tooltip("If set (recommended), only consider SimplePools on GameObjects with this tag. Leave empty to consider all SimplePools.")]
+    [SerializeField] private string spikePoolTag = "SpikePool";
+    [Tooltip("If true, prefer pools whose prefab contains a SpikeProjectile component (uses reflection to inspect SimplePool's prefab).")]
+    [SerializeField] private bool requireProjectileInPrefab = false;
+
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 7f;
     [SerializeField] private float moveDelay = 0.5f;
     [SerializeField] private int maxJumps = 6;
-    [SerializeField] private bool flipModelForward = true; // NEW: option to flip model 180 degrees
+    [SerializeField] private bool flipModelForward = true;
 
     [Header("Animation")]
     [SerializeField] private string attackBoolParameter = "isAttacking";
     [SerializeField] private string attackTriggerParameter = "spikes_out";
-    [SerializeField] private bool useAttackTrigger = true; // Use trigger instead of bool
+    [SerializeField] private bool useAttackTrigger = true;
 
     [Header("Exit / Despawn")]
     [SerializeField] private float runOutSpeed = 10f;
@@ -43,8 +53,8 @@ public class PufferFish : MonoBehaviour
         mgr = PufferWaypointManager.Instance;
         if (!mgr) { Debug.LogError("[PufferFish] No PufferWaypointManager in scene!"); enabled = false; }
 
-        if (!spikePool)
-            Debug.LogError("NO SPIKE POOL ATTACHED");
+        if (!spikePool && autoFindSpikePool)
+            ResolveSpikePool();
 
         animator = GetComponent<Animator>();
         if (!animator)
@@ -53,18 +63,15 @@ public class PufferFish : MonoBehaviour
 
     void OnEnable()
     {
-        // lock scale & plane
         transform.localScale = baseScale;
         cam = Camera.main;
 
-        // Reset animation parameters when enabled
-        if (animator)
-        {
-            if (!string.IsNullOrEmpty(attackBoolParameter))
-                animator.SetBool(attackBoolParameter, false);
-        }
+        if (animator && !string.IsNullOrEmpty(attackBoolParameter))
+            animator.SetBool(attackBoolParameter, false);
 
-        // TELEPORT OFF-SCREEN IMMEDIATELY (before first render)
+        if (!spikePool && autoFindSpikePool)
+            ResolveSpikePool();
+
         if (cam)
         {
             Bounds bnd = CameraXZBounds(cam);
@@ -74,11 +81,9 @@ public class PufferFish : MonoBehaviour
         }
         else
         {
-            // fallback: shove far left if no camera
             transform.position = new Vector3(transform.position.x - offscreenMargin, 0f, transform.position.z);
         }
 
-        // start behavior
         if (!running)
         {
             running = true;
@@ -94,8 +99,7 @@ public class PufferFish : MonoBehaviour
             currentIndex = -1;
         }
         running = false;
-        
-        // Reset animation parameters when disabled
+
         if (animator && !string.IsNullOrEmpty(attackBoolParameter))
             animator.SetBool(attackBoolParameter, false);
     }
@@ -111,20 +115,17 @@ public class PufferFish : MonoBehaviour
             jumps++;
         }
 
-        // after max jumps → fly offscreen
         yield return RunOffscreenThenDespawn();
     }
 
     IEnumerator MoveToFreeWaypoint()
     {
-        // release old spot
         if (currentIndex != -1)
         {
             mgr.ReleaseWaypoint(currentIndex);
             currentIndex = -1;
         }
 
-        // claim new
         int index = mgr.GetFreeWaypoint();
         if (index == -1)
         {
@@ -141,7 +142,6 @@ public class PufferFish : MonoBehaviour
             Vector3 dir = (targetPos - transform.position).normalized;
             transform.position += dir * moveSpeed * Time.deltaTime;
 
-            // Fix rotation - if model faces backwards, flip it 180 degrees
             Vector3 lookDir = flipModelForward ? -dir : dir;
             transform.rotation = Quaternion.Slerp(transform.rotation,
                 Quaternion.LookRotation(lookDir, Vector3.up), 10f * Time.deltaTime);
@@ -152,16 +152,17 @@ public class PufferFish : MonoBehaviour
     IEnumerator InflateShootDeflate()
     {
         yield return TweenScale(baseScale, baseScale * inflateScaleMultiplier, inflateTime);
-        
-        // Trigger attack animation
+
         TriggerAttackAnimation();
-        
+
+        // Ensure a pool exists before firing
+        if (!spikePool && autoFindSpikePool)
+            ResolveSpikePool();
+
         FireOneWave();
+
         yield return new WaitForSeconds(inflatedDuration);
-        
-        // End attack animation
         EndAttackAnimation();
-        
         yield return TweenScale(transform.localScale, baseScale, deflateTime);
     }
 
@@ -170,29 +171,16 @@ public class PufferFish : MonoBehaviour
         if (!animator) return;
 
         if (useAttackTrigger && !string.IsNullOrEmpty(attackTriggerParameter))
-        {
-            // Use trigger parameter (preferred for one-shot animations)
             animator.SetTrigger(attackTriggerParameter);
-            Debug.Log($"[PufferFish] Triggering animation: {attackTriggerParameter}");
-        }
         else if (!string.IsNullOrEmpty(attackBoolParameter))
-        {
-            // Use bool parameter as fallback
             animator.SetBool(attackBoolParameter, true);
-            Debug.Log($"[PufferFish] Setting bool parameter: {attackBoolParameter} = true");
-        }
     }
 
     private void EndAttackAnimation()
     {
         if (!animator) return;
-
-        // Only reset bool parameters (triggers reset automatically)
         if (!useAttackTrigger && !string.IsNullOrEmpty(attackBoolParameter))
-        {
             animator.SetBool(attackBoolParameter, false);
-            Debug.Log($"[PufferFish] Setting bool parameter: {attackBoolParameter} = false");
-        }
     }
 
     IEnumerator RunOffscreenThenDespawn()
@@ -208,11 +196,10 @@ public class PufferFish : MonoBehaviour
         while (elapsed < runOutMaxTime)
         {
             dir = (exit - transform.position);
-            if (dir.sqrMagnitude < 0.05f * 0.05f) break;
+            if (dir.sqrMagnitude < 0.0025f) break;
             Vector3 moveDir = dir.normalized;
             transform.position += moveDir * runOutSpeed * Time.deltaTime;
 
-            // Fix rotation for exit movement too
             Vector3 lookDir = flipModelForward ? -moveDir : moveDir;
             transform.rotation = Quaternion.Slerp(transform.rotation,
                 Quaternion.LookRotation(lookDir, Vector3.up), 8f * Time.deltaTime);
@@ -220,7 +207,6 @@ public class PufferFish : MonoBehaviour
             yield return null;
         }
 
-        // free current waypoint
         if (currentIndex != -1)
         {
             mgr.ReleaseWaypoint(currentIndex);
@@ -229,6 +215,75 @@ public class PufferFish : MonoBehaviour
 
         if (destroyOnEnd) Destroy(gameObject);
         else gameObject.SetActive(false);
+    }
+
+    // ----------------------- Auto-Find Spike Pool -----------------------
+
+    private void ResolveSpikePool()
+    {
+        SimplePool found = null;
+
+        // 1) Tagged pools first (if tag provided)
+        if (!string.IsNullOrEmpty(spikePoolTag))
+        {
+            try
+            {
+                var tagged = GameObject.FindGameObjectsWithTag(spikePoolTag);
+                float best = float.PositiveInfinity;
+                foreach (var go in tagged)
+                {
+                    if (!go) continue;
+                    var p = go.GetComponent<SimplePool>();
+                    if (!p) continue;
+                    if (requireProjectileInPrefab && !PoolLikelySpawnsSpikeProjectiles(p)) continue;
+
+                    float d = (go.transform.position - transform.position).sqrMagnitude;
+                    if (d < best) { best = d; found = p; }
+                }
+            }
+            catch { /* tag might not exist; ignore */ }
+        }
+
+        // 2) Fallback: any SimplePool in scene (active or inactive)
+        if (!found)
+        {
+            var all = Resources.FindObjectsOfTypeAll<SimplePool>(); // includes inactive & DontDestroyOnLoad
+            float best = float.PositiveInfinity;
+            foreach (var p in all)
+            {
+                if (!p || p.gameObject.hideFlags != HideFlags.None) continue; // ignore assets
+                if (requireProjectileInPrefab && !PoolLikelySpawnsSpikeProjectiles(p)) continue;
+
+                float d = (p.transform.position - transform.position).sqrMagnitude;
+                if (d < best) { best = d; found = p; }
+            }
+        }
+
+        if (found)
+        {
+            spikePool = found;
+            // Debug.Log($"[PufferFish] Bound nearest spike pool: {found.name}", found);
+        }
+        else
+        {
+            Debug.LogWarning("[PufferFish] Could not find a spike pool. No spikes will fire.");
+        }
+    }
+
+    // Optional: check the pool's prefab via reflection for SpikeProjectile
+    private bool PoolLikelySpawnsSpikeProjectiles(SimplePool p)
+    {
+        if (!requireProjectileInPrefab || p == null) return true;
+        try
+        {
+            var field = typeof(SimplePool).GetField("prefab", BindingFlags.NonPublic | BindingFlags.Instance);
+            var prefabGO = field?.GetValue(p) as GameObject;
+            return prefabGO && prefabGO.GetComponent<SpikeProjectile>() != null;
+        }
+        catch
+        {
+            return true; // fail open
+        }
     }
 
     // ----------------------- Helpers -----------------------
@@ -249,6 +304,8 @@ public class PufferFish : MonoBehaviour
             Vector3 pos = origin + dir * offset; pos.y = 0f;
 
             var go = spikePool.Get();
+            if (!go) continue;
+
             var proj = go.GetComponent<SpikeProjectile>();
             if (proj) proj.Launch(pos, dir, spikePool, ignore);
             else go.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(dir, Vector3.up));

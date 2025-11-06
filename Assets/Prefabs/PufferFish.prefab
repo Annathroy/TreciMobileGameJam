@@ -330,16 +330,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4aaf5ff56ac909e40a29d964d4860e9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PufferFish
-  spikePool: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
+  spikePool: {fileID: 0}
   spikesPerWave: 24
-  inflateScaleMultiplier: 3
+  inflateScaleMultiplier: 4
   inflateTime: 0.15
   inflatedDuration: 0.5
   deflateTime: 0.15
   fireOrigin: {fileID: 0}
+  autoFindSpikePool: 1
+  spikePoolTag: SpikePool
+  requireProjectileInPrefab: 1
   moveSpeed: 7
   moveDelay: 0.5
-  maxJumps: 3
+  maxJumps: 6
   flipModelForward: 1
   attackBoolParameter: isAttacking
   attackTriggerParameter: spikes_out

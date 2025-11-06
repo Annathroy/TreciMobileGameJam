@@ -8,6 +8,7 @@ TagManager:
   - EnemyProjectile
   - Projectile
   - PufferFish
+  - SpikePool
   layers:
   - Default
   - TransparentFX

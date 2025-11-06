@@ -8,7 +8,7 @@ public class SharkTelegraphBottomCenter : MonoBehaviour
     [Header("Start")]
     [SerializeField] private float firstAttackDelay = 2f;   // legacy field
     [SerializeField, Tooltip("Extra idle time before the *first* attack after enabling.")]
-    private float initialIdleTime = 6f;
+    private float initialIdleTime = 3f;
 
     [Header("Timing")]
     [SerializeField] private float cycleInterval = 6f;
