@@ -47,7 +47,32 @@ public class PlayerAttack : MonoBehaviour
             if (bombShooting)
             {
                 var bomb = bombPool.GetObject();
+
+                // Make sure bomb faces the same direction as regular projectiles
+                Quaternion bombRotation = firePoint.rotation * Quaternion.Euler(90, 0, 0);
                 bomb.transform.SetPositionAndRotation(spawnPos, firePoint.rotation);
+                
+                // If the bomb has a movement script, try to set its direction explicitly
+                var bombMovement = bomb.GetComponent<MonoBehaviour>();
+                if (bombMovement != null)
+                {
+                    // Try to find and set movement direction using reflection or specific component
+                    // This is a fallback - you should replace this with the actual component name
+                    
+                    // Option 1: If bomb uses Rigidbody for movement
+                    var rb = bomb.GetComponent<Rigidbody>();
+                    if (rb != null)
+                    {
+                        rb.linearVelocity = firePoint.forward * 10f; // Adjust speed as needed
+                    }
+                    
+                    // Option 2: If bomb has a specific movement component (replace 'YourBombScript' with actual name)
+                    // var bombScript = bomb.GetComponent<YourBombScript>();
+                    // if (bombScript != null)
+                    // {
+                    //     bombScript.SetDirection(firePoint.forward);
+                    // }
+                }
             }
             else if (eightWay)
             {

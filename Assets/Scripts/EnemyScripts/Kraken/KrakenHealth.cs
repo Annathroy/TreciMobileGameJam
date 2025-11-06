@@ -41,6 +41,8 @@ public class KrakenHealth : MonoBehaviour
     [Header("Eye Texture Changes")]
     [Tooltip("Change eye textures on death.")]
     [SerializeField] private bool changeEyeTexturesOnDeath = true;
+    [Tooltip("Use material modification instead of MaterialPropertyBlock (for persistent changes).")]
+    [SerializeField] private bool useDirectMaterialModification = false;
     [Tooltip("Reference to the Kraken's eye GameObject.")]
     [SerializeField] private GameObject eyeGameObject;
     [Tooltip("Renderers that represent the Kraken's eyes (assign manually).")]
@@ -78,11 +80,34 @@ public class KrakenHealth : MonoBehaviour
     readonly List<Renderer> rends = new List<Renderer>();
     MaterialPropertyBlock mpb;
     MaterialPropertyBlock eyeMpb; // Separate MPB for eyes
+
+    // Multiple possible shader property names to try
+    static readonly int[] BaseMapProps = {
+        Shader.PropertyToID("_BaseMap"),        // URP Lit
+        Shader.PropertyToID("_MainTex"),        // Built-in Standard/Legacy
+        Shader.PropertyToID("_AlbedoTex"),      // Some custom shaders
+        Shader.PropertyToID("_DiffuseMap")      // Other custom variants
+    };
+
+    static readonly int[] NormalMapProps = {
+        Shader.PropertyToID("_BumpMap"),        // Most common
+        Shader.PropertyToID("_NormalMap"),      // Alternative
+        Shader.PropertyToID("_Normal")          // Some custom shaders
+    };
+
+    static readonly int[] SmoothnessMapProps = {
+        Shader.PropertyToID("_MetallicGlossMap"), // URP
+        Shader.PropertyToID("_SpecGlossMap"),     // Built-in
+        Shader.PropertyToID("_SmoothnessMap")     // Direct
+    };
+
+    static readonly int[] SmoothnessProps = {
+        Shader.PropertyToID("_Smoothness"),     // Most common
+        Shader.PropertyToID("_Glossiness"),     // Built-in Standard
+        Shader.PropertyToID("_Gloss")           // Alternative
+    };
+
     static readonly int ColorProp = Shader.PropertyToID("_BaseColor"); // URP/Lit & Unlit use _BaseColor
-    static readonly int BaseMapProp = Shader.PropertyToID("_BaseMap");
-    static readonly int NormalMapProp = Shader.PropertyToID("_BumpMap");
-    static readonly int SmoothnessProp = Shader.PropertyToID("_Smoothness");
-    static readonly int SmoothnessMapProp = Shader.PropertyToID("_MetallicGlossMap"); // URP uses _MetallicGlossMap for smoothness map
     private OnWin onWinScript;
 
     void Awake()
@@ -103,9 +128,6 @@ public class KrakenHealth : MonoBehaviour
             onDeath.AddListener(ChangeEyeTextures);
             Debug.Log("[KrakenHealth] Eye texture change listener added to onDeath event.");
         }
-
-        // Don't invoke onHpChanged in Awake to prevent early event triggers
-        // onHpChanged?.Invoke(currentHP, maxHP);
     }
 
     void Start()
@@ -139,6 +161,7 @@ public class KrakenHealth : MonoBehaviour
     {
         Debug.Log($"[KrakenHealth] Validating eye setup:");
         Debug.Log($"  - changeEyeTexturesOnDeath: {changeEyeTexturesOnDeath}");
+        Debug.Log($"  - useDirectMaterialModification: {useDirectMaterialModification}");
         Debug.Log($"  - eyeGameObject: {(eyeGameObject != null ? eyeGameObject.name : "NULL")}");
         Debug.Log($"  - eyeRenderers count: {(eyeRenderers != null ? eyeRenderers.Length : 0)}");
         Debug.Log($"  - deadEyeBaseTexture: {(deadEyeBaseTexture != null ? deadEyeBaseTexture.name : "NULL")}");
@@ -151,7 +174,27 @@ public class KrakenHealth : MonoBehaviour
             {
                 if (eyeRenderers[i] != null)
                 {
-                    Debug.Log($"  - Eye Renderer [{i}]: {eyeRenderers[i].name} (Material: {eyeRenderers[i].material?.name ?? "NULL"})");
+                    var material = eyeRenderers[i].material;
+                    Debug.Log($"  - Eye Renderer [{i}]: {eyeRenderers[i].name}");
+                    Debug.Log($"    Material: {material?.name ?? "NULL"}");
+                    Debug.Log($"    Shader: {material?.shader?.name ?? "NULL"}");
+
+                    if (material != null)
+                    {
+                        // List available texture properties
+                        var shader = material.shader;
+                        int propertyCount = shader.GetPropertyCount();
+                        Debug.Log($"    Available shader properties ({propertyCount}):");
+                        for (int j = 0; j < propertyCount; j++)
+                        {
+                            var propType = shader.GetPropertyType(j);
+                            if (propType == UnityEngine.Rendering.ShaderPropertyType.Texture)
+                            {
+                                var propName = shader.GetPropertyName(j);
+                                Debug.Log($"      - {propName} (Texture)");
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -231,56 +274,162 @@ public class KrakenHealth : MonoBehaviour
 
             Debug.Log($"[KrakenHealth] Changing textures for eye renderer [{i}]: {eyeRenderer.name}");
 
-            // Use separate MPB for eyes to avoid conflicts with death flash
-            eyeRenderer.GetPropertyBlock(eyeMpb);
-
-            // Log current shader properties
-            var material = eyeRenderer.material;
-            if (material != null)
+            if (useDirectMaterialModification)
             {
-                Debug.Log($"  - Current material: {material.name}");
-                Debug.Log($"  - Current shader: {material.shader.name}");
-            }
-
-            // Set new textures and properties
-            if (deadEyeBaseTexture != null)
-            {
-                eyeMpb.SetTexture(BaseMapProp, deadEyeBaseTexture);
-                Debug.Log($"  - Set base texture: {deadEyeBaseTexture.name}");
+                // Modify material directly (creates new material instance)
+                var material = eyeRenderer.material;
+                ChangeTexturesOnMaterial(material, i);
             }
             else
             {
-                Debug.LogWarning("  - No dead eye base texture assigned");
+                // Use MaterialPropertyBlock
+                eyeRenderer.GetPropertyBlock(eyeMpb);
+                ChangeTexturesOnPropertyBlock(eyeMpb, eyeRenderer, i);
+                eyeRenderer.SetPropertyBlock(eyeMpb);
             }
-
-            if (deadEyeNormalTexture != null)
-            {
-                eyeMpb.SetTexture(NormalMapProp, deadEyeNormalTexture);
-                Debug.Log($"  - Set normal texture: {deadEyeNormalTexture.name}");
-            }
-
-            if (deadEyeSmoothnessMap != null)
-            {
-                eyeMpb.SetTexture(SmoothnessMapProp, deadEyeSmoothnessMap);
-                Debug.Log($"  - Set smoothness map: {deadEyeSmoothnessMap.name}");
-            }
-
-            // Set smoothness value
-            eyeMpb.SetFloat(SmoothnessProp, deadEyeSmoothness);
-            Debug.Log($"  - Set smoothness value: {deadEyeSmoothness}");
-
-            // Apply the changes using separate MPB
-            eyeRenderer.SetPropertyBlock(eyeMpb);
-            Debug.Log($"  - Applied eye property block to {eyeRenderer.name}");
         }
 
         Debug.Log("[KrakenHealth] Eye texture change complete!");
     }
 
+    private void ChangeTexturesOnMaterial(Material material, int rendererIndex)
+    {
+        Debug.Log($"  - Using direct material modification for renderer [{rendererIndex}]");
+
+        if (deadEyeBaseTexture != null)
+        {
+            bool set = false;
+            foreach (int prop in BaseMapProps)
+            {
+                if (material.HasProperty(prop))
+                {
+                    material.SetTexture(prop, deadEyeBaseTexture);
+                    Debug.Log($"  - Set base texture via property ID: {prop}");
+                    set = true;
+                    break;
+                }
+            }
+            if (!set) Debug.LogWarning("  - Could not find base texture property on material");
+        }
+
+        if (deadEyeNormalTexture != null)
+        {
+            bool set = false;
+            foreach (int prop in NormalMapProps)
+            {
+                if (material.HasProperty(prop))
+                {
+                    material.SetTexture(prop, deadEyeNormalTexture);
+                    Debug.Log($"  - Set normal texture via property ID: {prop}");
+                    set = true;
+                    break;
+                }
+            }
+            if (!set) Debug.LogWarning("  - Could not find normal texture property on material");
+        }
+
+        if (deadEyeSmoothnessMap != null)
+        {
+            bool set = false;
+            foreach (int prop in SmoothnessMapProps)
+            {
+                if (material.HasProperty(prop))
+                {
+                    material.SetTexture(prop, deadEyeSmoothnessMap);
+                    Debug.Log($"  - Set smoothness map via property ID: {prop}");
+                    set = true;
+                    break;
+                }
+            }
+            if (!set) Debug.LogWarning("  - Could not find smoothness map property on material");
+        }
+
+        // Set smoothness value
+        bool smoothnessSet = false;
+        foreach (int prop in SmoothnessProps)
+        {
+            if (material.HasProperty(prop))
+            {
+                material.SetFloat(prop, deadEyeSmoothness);
+                Debug.Log($"  - Set smoothness value via property ID: {prop}");
+                smoothnessSet = true;
+                break;
+            }
+        }
+        if (!smoothnessSet) Debug.LogWarning("  - Could not find smoothness property on material");
+    }
+
+    private void ChangeTexturesOnPropertyBlock(MaterialPropertyBlock mpb, Renderer renderer, int rendererIndex)
+    {
+        Debug.Log($"  - Using MaterialPropertyBlock for renderer [{rendererIndex}]");
+        var material = renderer.material;
+
+        if (deadEyeBaseTexture != null)
+        {
+            bool set = false;
+            foreach (int prop in BaseMapProps)
+            {
+                if (material.HasProperty(prop))
+                {
+                    mpb.SetTexture(prop, deadEyeBaseTexture);
+                    Debug.Log($"  - Set base texture via MPB property ID: {prop}");
+                    set = true;
+                    break;
+                }
+            }
+            if (!set) Debug.LogWarning("  - Could not find base texture property on material");
+        }
+
+        if (deadEyeNormalTexture != null)
+        {
+            bool set = false;
+            foreach (int prop in NormalMapProps)
+            {
+                if (material.HasProperty(prop))
+                {
+                    mpb.SetTexture(prop, deadEyeNormalTexture);
+                    Debug.Log($"  - Set normal texture via MPB property ID: {prop}");
+                    set = true;
+                    break;
+                }
+            }
+            if (!set) Debug.LogWarning("  - Could not find normal texture property on material");
+        }
+
+        if (deadEyeSmoothnessMap != null)
+        {
+            bool set = false;
+            foreach (int prop in SmoothnessMapProps)
+            {
+                if (material.HasProperty(prop))
+                {
+                    mpb.SetTexture(prop, deadEyeSmoothnessMap);
+                    Debug.Log($"  - Set smoothness map via MPB property ID: {prop}");
+                    set = true;
+                    break;
+                }
+            }
+            if (!set) Debug.LogWarning("  - Could not find smoothness map property on material");
+        }
+
+        // Set smoothness value
+        bool smoothnessSet = false;
+        foreach (int prop in SmoothnessProps)
+        {
+            if (material.HasProperty(prop))
+            {
+                mpb.SetFloat(prop, deadEyeSmoothness);
+                Debug.Log($"  - Set smoothness value via MPB property ID: {prop}");
+                smoothnessSet = true;
+                break;
+            }
+        }
+        if (!smoothnessSet) Debug.LogWarning("  - Could not find smoothness property on material");
+    }
+
     /// <summary>
     /// Public method to manually test eye texture changes (for debugging)
     /// </summary>
-    [System.Diagnostics.Conditional("UNITY_EDITOR")]
     public void TestEyeTextureChange()
     {
         Debug.Log("[KrakenHealth] Manual eye texture test triggered!");
