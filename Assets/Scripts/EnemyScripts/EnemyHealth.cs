@@ -11,9 +11,7 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private int hp;
 
     [Header("Take damage from projectiles automatically")]
-    [Tooltip("If on, enemy will read damage from any Projectile it touches (trigger).")]
     [SerializeField] private bool acceptProjectileTriggers = true;
-    [Tooltip("If on, enemy will also read damage from collisions (non-trigger).")]
     [SerializeField] private bool acceptProjectileCollisions = false;
 
     [Header("Invulnerability")]
@@ -25,7 +23,7 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private AudioClip deathSFX;
     [SerializeField] private float deathSFXVolume = 0.9f;
 
-    [Header("Pooling")]
+    [Header("Pooling / Behavior")]
     [Tooltip("If true, will return to SharedFishPool (if available) instead of Destroy/disable.")]
     [SerializeField] private bool useSharedPool = true;
     [Tooltip("Only return to pool if death was caused by a projectile.")]
@@ -35,28 +33,26 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private bool enableDebugLogs = false;
 
     [Header("Events")]
-    public UnityEvent<int, int> onHealthChanged;  // (current, max)
+    public UnityEvent<int, int> onHealthChanged;
     public UnityEvent onDeath;
 
-    // ---- internals ----
+    // Internals
     bool invulnerable = false;
     Coroutine invulnCo;
     readonly List<Renderer> renderers = new();
-    bool lastHitWasProjectile = false;           // tracks kill source
-    PooledObject po;                             // for pool return hint
+    bool lastHitWasProjectile = false;
+    PooledObject po;
 
     void Awake()
     {
         CacheRenderers();
-        po = GetComponent<PooledObject>();       // present if this enemy is pooled
+        po = GetComponent<PooledObject>();
         hp = Mathf.Max(1, maxHP);
         onHealthChanged?.Invoke(hp, maxHP);
     }
 
-    // If we're using a pool, this object will be reactivated; reset state here.
     void OnEnable()
     {
-        // If already initialized once, top-up hp on reuse
         if (hp <= 0 || hp > maxHP) hp = maxHP;
         SetVisible(true);
         invulnerable = false;
@@ -78,10 +74,18 @@ public class EnemyHealth : MonoBehaviour
         hp = Mathf.Max(0, hp - amount);
         onHealthChanged?.Invoke(hp, maxHP);
 
-        if (hp <= 0) { Die(); return; }
+        if (hp <= 0)
+        {
+            Die();
+            return;
+        }
 
-        if (invulnCo != null) StopCoroutine(invulnCo);
-        invulnCo = StartCoroutine(InvulnerabilityFlash(invulnDuration, flashInterval));
+        // Safe coroutine start (skip if already disabled)
+        if (gameObject.activeInHierarchy && hp > 0)
+        {
+            if (invulnCo != null) StopCoroutine(invulnCo);
+            invulnCo = StartCoroutine(InvulnerabilityFlash(invulnDuration, flashInterval));
+        }
     }
 
     public void Heal(int amount)
@@ -98,7 +102,7 @@ public class EnemyHealth : MonoBehaviour
     public int MaxHP => maxHP;
     public bool IsDead => hp <= 0;
 
-    // ---------- Automatic intake from Projectile ----------
+    // ---------- Automatic projectile detection ----------
     void OnTriggerEnter(Collider other)
     {
         if (!acceptProjectileTriggers || hp <= 0) return;
@@ -134,7 +138,7 @@ public class EnemyHealth : MonoBehaviour
         SetVisible(true);
         onDeath?.Invoke();
 
-        // VFX / SFX first
+        // VFX/SFX
         if (deathVFX)
         {
             var vfx = Instantiate(deathVFX, transform.position, Quaternion.identity);
@@ -143,15 +147,14 @@ public class EnemyHealth : MonoBehaviour
         if (deathSFX)
             AudioSource.PlayClipAtPoint(deathSFX, transform.position, deathSFXVolume);
 
-        // --- Manual handling for PufferFish ---
-        // Tag it in Unity as "PufferFish" or ensure its name contains "Puffer"
-        if (CompareTag("PufferFish") || name.Contains("PufferFish"))
+        // --- SPECIAL CASE: PufferFish ---
+        if (CompareTag("PufferFish") || name.Contains("Puffer"))
         {
             gameObject.SetActive(false);
             return;
         }
 
-        // --- normal pooled or disable fallback ---
+        // --- Normal handling ---
         bool shouldPool = useSharedPool && SharedFishPool.Instance != null &&
                           (!onlyPoolWhenKilledByProjectile || lastHitWasProjectile);
 
@@ -169,11 +172,14 @@ public class EnemyHealth : MonoBehaviour
     // ---------- Flash ----------
     IEnumerator InvulnerabilityFlash(float duration, float interval)
     {
+        if (!gameObject.activeInHierarchy)
+            yield break;
+
         invulnerable = true;
         float until = Time.time + duration;
         bool vis = true;
 
-        while (Time.time < until)
+        while (Time.time < until && gameObject.activeInHierarchy)
         {
             vis = !vis;
             SetVisible(vis);
