@@ -22,6 +22,17 @@ public class KrakenTelegraphBands : MonoBehaviour
     [SerializeField] private Image markerPrefab;
     [SerializeField] private Color markerColor = new Color(1f, 0f, 0f, 0.6f);
 
+    // --- NEW: flashing sprites / options ---
+    [SerializeField] private Sprite markerFlashA;            // assign PNG A
+    [SerializeField] private Sprite markerFlashB;            // assign PNG B
+    [SerializeField, Tooltip("How many swaps per second (A↔B↔A...)")]
+    private float markerFlashHz = 8f;
+    [SerializeField, Tooltip("If true, keep image aspect (no stretching).")]
+    private bool markerPreserveAspect = true;
+    [SerializeField, Tooltip("If true, set native size on the image instead of cell size.")]
+    private bool markerUseNativeSize = false;
+    // --------------------------------------
+
     [Header("Tentacle (world-space)")]
     [SerializeField] private GameObject tentaclePrefab;      // pivot at base
     [SerializeField] private Transform tentacleGraphicRoot;  // optional: child to scale
@@ -30,8 +41,9 @@ public class KrakenTelegraphBands : MonoBehaviour
     [SerializeField] private float attackPlaneY = 0f;        // reference Y
 
     [Header("Stab Animation")]
-    [SerializeField] private Axis lengthAxis = Axis.Z;     // default; may be overridden
+    [SerializeField] private bool debugFreezeAtPeak = false;
     public enum Axis { X, Y, Z }
+    [SerializeField] private Axis lengthAxis = Axis.Z;     // default; may be overridden
     [SerializeField] private float extendTime = 0.35f;      // slower = clearer
     [SerializeField] private float holdTime = 0.30f;
     [SerializeField] private float retractTime = 0.50f;
@@ -39,7 +51,6 @@ public class KrakenTelegraphBands : MonoBehaviour
     private float stabPlaybackSpeed = 0.7f;
     [SerializeField, Tooltip("Guarantee visibility at full extension (seconds).")]
     private float minPeakSeconds = 0.25f;
-    [SerializeField] private bool debugFreezeAtPeak = false;
 
     [Header("Length & Thickness")]
     [SerializeField] private float minLength = 1f;
@@ -127,7 +138,9 @@ public class KrakenTelegraphBands : MonoBehaviour
             int index = Random.Range(minRow, maxRowExclusive);
             var m = SpawnMarker(BandType.Row, index);
 
+            // flashing runs during this warn window
             yield return WaitSmart(warnDuration);
+
             if (m.rt) Destroy(m.rt.gameObject); // safe, position cached
 
             FireTentacleStab(m);
@@ -142,7 +155,12 @@ public class KrakenTelegraphBands : MonoBehaviour
         if (type == BandType.Column && !enableColumnAttacks) type = BandType.Row;
 
         var img = markerPrefab ? Instantiate(markerPrefab, rootCanvas.transform) : CreateDefaultMarker();
-        img.color = markerColor; img.raycastTarget = false;
+        img.color = markerColor;
+        img.raycastTarget = false;
+        img.preserveAspect = markerPreserveAspect;
+
+        // pick initial sprite if provided
+        if (markerFlashA) img.sprite = markerFlashA;
 
         var rt = img.rectTransform;
         rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.zero; rt.pivot = Vector2.zero;
@@ -150,13 +168,20 @@ public class KrakenTelegraphBands : MonoBehaviour
         float w = canvasRT.rect.width, h = canvasRT.rect.height;
         float cellW = w / Mathf.Max(1, cols);
         float cellH = h / Mathf.Max(1, rows);
-        rt.sizeDelta = new Vector2(cellW * 0.5f, cellH * 0.5f);
+
+        if (markerUseNativeSize && img.sprite)
+        {
+            img.SetNativeSize();
+        }
+        else
+        {
+            rt.sizeDelta = new Vector2(cellW * 0.5f, cellH * 0.5f);
+        }
 
         var info = new MarkerInfo { rt = rt, type = type, index = index, side = Side.Top };
 
         if (rowsAreXBands)
         {
-            // "Row" = X-band (vertical slice) -> warn from LEFT or RIGHT, align Y by index
             bool fromLeft = Random.value < 0.5f;
             float x = fromLeft ? 0f : (w - rt.sizeDelta.x);
             float y = h - ((index + 1) * cellH) + (cellH - rt.sizeDelta.y) * 0.5f;
@@ -165,7 +190,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         }
         else
         {
-            // "Row" = Z-band (horizontal) -> warn from TOP or BOTTOM, align X by index
             bool fromTop = Random.value < 0.5f;
             float x = (index + 0.5f) * cellW - rt.sizeDelta.x * 0.5f;
             float y = fromTop ? (h - rt.sizeDelta.y) : 0f;
@@ -174,6 +198,12 @@ public class KrakenTelegraphBands : MonoBehaviour
         }
 
         info.screenCenterPx = GetMarkerCenterScreenPx(rt, rootCanvas);
+
+        // --- NEW: kick off flashing for the warn window ---
+        if (markerFlashA || markerFlashB)
+            StartCoroutine(FlashMarker(img, warnDuration));
+        // --------------------------------------------------
+
         return info;
     }
 
@@ -181,8 +211,38 @@ public class KrakenTelegraphBands : MonoBehaviour
     {
         var go = new GameObject("KrakenMarker", typeof(RectTransform), typeof(Image));
         go.transform.SetParent(rootCanvas.transform, false);
-        return go.GetComponent<Image>();
+        var img = go.GetComponent<Image>();
+        img.preserveAspect = markerPreserveAspect;
+        return img;
     }
+
+    // --- NEW: flashing coroutine (A <-> B) ---
+    IEnumerator FlashMarker(Image img, float seconds)
+    {
+        if (!img) yield break;
+
+        float elapsed = 0f;
+        float halfPeriod = 0.5f / Mathf.Max(0.01f, markerFlashHz); // swap twice per period
+        Sprite a = markerFlashA ? markerFlashA : img.sprite;
+        Sprite b = markerFlashB ? markerFlashB : a;                // fall back to A if B missing
+        bool useRealtime = useUnscaledTime;
+
+        // ensure we start on A
+        if (a) img.sprite = a;
+
+        while (elapsed < seconds && img)
+        {
+            // swap
+            img.sprite = (img.sprite == a) ? b : a;
+
+            // wait half period
+            if (useRealtime) yield return new WaitForSecondsRealtime(halfPeriod);
+            else yield return new WaitForSeconds(halfPeriod);
+
+            elapsed += halfPeriod;
+        }
+    }
+    // ----------------------------------------
 
     void FireTentacleStab(MarkerInfo m)
     {
@@ -200,7 +260,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         Vector2 basePx, tipPx;
         if (rowsAreXBands)
         {
-            // LEFT/RIGHT stab
             if (m.side == Side.Left)
             {
                 basePx = new Vector2(pad, markerCenterPx.y);
@@ -214,7 +273,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         }
         else
         {
-            // TOP/BOTTOM stab
             if (m.side == Side.Top)
             {
                 basePx = new Vector2(markerCenterPx.x, sh - pad);
@@ -247,7 +305,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         var go = Instantiate(tentaclePrefab, baseWorld, Quaternion.identity);
         var gfx = ResolveGraphic(go.transform, tentacleGraphicRoot, tentacleGraphicChildPath);
 
-        // Orientation in CAMERA plane
         Vector3 camUp = mainCam.transform.up;
         Vector3 camNorm = -mainCam.transform.forward;
         Vector3 stabDir = Vector3.ProjectOnPlane(dir, camNorm).normalized;
@@ -257,35 +314,21 @@ public class KrakenTelegraphBands : MonoBehaviour
                             * Quaternion.Euler(prefabExtraEuler);
         go.transform.rotation = toWorld * rotFix;
 
-        // ---- choose axis (override → force-by-band → alignment fallback) ----
         Axis activeAxis;
-        if (overrideLengthAxis)
-        {
-            activeAxis = overrideAxis;
-        }
-        else if (forceAxisByBand)
-        {
-            // Rows-as-X-bands = LEFT/RIGHT → scale along X; Z-bands → scale along Z
-            activeAxis = rowsAreXBands ? Axis.X : Axis.Z;
-        }
-        else
-        {
-            activeAxis = ChooseLengthAxisByAlignment(gfx, stabDir);
-        }
+        if (overrideLengthAxis) activeAxis = overrideAxis;
+        else if (forceAxisByBand) activeAxis = rowsAreXBands ? Axis.X : Axis.Z;
+        else activeAxis = ChooseLengthAxisByAlignment(gfx, stabDir);
 
-        // Compute reach and factor along *activeAxis*
         float desiredLen = Mathf.Max(minLength, len * stabLengthMultiplier + extraLengthMargin);
         float prefabLen = GetPrefabBaseLength(gfx, activeAxis);
         float targetFactor = desiredLen / Mathf.Max(0.0001f, prefabLen);
 
-        // Start fully retracted; preserve thickness axes
         Vector3 baseScale = gfx.localScale;
         float axisBase = GetAxis(baseScale, activeAxis);
         if (Mathf.Abs(axisBase) < 1e-4f) axisBase = minVisibleAxisScale;
 
         Vector3 s0 = baseScale; SetAxis(ref s0, activeAxis, 0f); gfx.localScale = s0;
 
-        // Collider gate
         Collider col = damageCollider ? damageCollider : go.GetComponentInChildren<Collider>();
         if (col && enableDamageOnlyWhenExtended) col.enabled = false;
 
@@ -305,16 +348,15 @@ public class KrakenTelegraphBands : MonoBehaviour
         {
             if (!go) return;
             var p = go.transform.position;
-            go.transform.position = new Vector3(p.x, attackPlaneY, p.z); // keep glued to plane
+            go.transform.position = new Vector3(p.x, attackPlaneY, p.z);
         }
 
-        // EXTEND
         float t = 0f, ext = Mathf.Max(0.01f, ExtDur());
         while (t < ext && go)
         {
             t += Delta();
             float k = Mathf.Clamp01(t / ext);
-            float f = 1f - (1f - k) * (1f - k); // easeOutQuad
+            float f = 1f - (1f - k) * (1f - k);
             float factor = Mathf.Lerp(0f, targetFactor, f);
             Vector3 s = baseScale; SetAxis(ref s, axis, factor * axisBase);
             gfx.localScale = s; ClampPlaneY(); yield return null;
@@ -322,7 +364,6 @@ public class KrakenTelegraphBands : MonoBehaviour
 
         if (go && col && enableDamageOnlyWhenExtended) col.enabled = true;
 
-        // PEAK HOLD (guaranteed)
         float hold = Mathf.Max(minPeakSeconds, HoldDur());
         if (go && (hold > 0f || debugFreezeAtPeak))
         {
@@ -332,13 +373,12 @@ public class KrakenTelegraphBands : MonoBehaviour
 
         if (go && col && enableDamageOnlyWhenExtended) col.enabled = false;
 
-        // RETRACT
         t = 0f; float ret = Mathf.Max(0.01f, RetDur());
         while (t < ret && go)
         {
             t += Delta();
             float k = Mathf.Clamp01(t / ret);
-            float f = k * k; // easeInQuad
+            float f = k * k;
             float factor = Mathf.Lerp(targetFactor, 0f, f);
             Vector3 s = baseScale; SetAxis(ref s, axis, factor * axisBase);
             gfx.localScale = s; ClampPlaneY(); yield return null;
@@ -347,7 +387,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         if (go) Destroy(go);
     }
 
-    // ---------- Helpers ----------
     static void SetAxis(ref Vector3 v, Axis axis, float value)
     {
         switch (axis) { case Axis.X: v.x = value; break; case Axis.Y: v.y = value; break; default: v.z = value; break; }
@@ -361,7 +400,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         switch (a) { case Axis.X: return Vector3.right; case Axis.Y: return Vector3.up; default: return Vector3.forward; }
     }
 
-    // Alignment fallback (kept for completeness if you disable force/override)
     Axis ChooseLengthAxisByAlignment(Transform gfx, Vector3 stabDirWorld)
     {
         Vector3 camNorm = -mainCam.transform.forward;
@@ -377,7 +415,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         float dy = Mathf.Abs(Vector3.Dot(yw, stabDirWorld));
         float dz = Mathf.Abs(Vector3.Dot(zw, stabDirWorld));
 
-        // prefer X/Z over Y in top-down
         dy *= 0.5f;
 
         if (dx >= dy && dx >= dz) return Axis.X;
@@ -452,7 +489,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         if (camPlane.Raycast(ray, out float enterCam))
             return ray.GetPoint(enterCam);
 
-        // Fallback: world-Y plane
         Plane yPlane = new Plane(Vector3.up, new Vector3(0f, planeY, 0f));
         if (yPlane.Raycast(ray, out float enterY))
             return ray.GetPoint(enterY);
@@ -460,7 +496,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         return mainCam.ScreenToWorldPoint(new Vector3(pixelPos.x, pixelPos.y, 10f));
     }
 
-    // smart wait (scaled/unscaled)
     IEnumerator WaitSmart(float seconds)
     {
         if (useUnscaledTime) yield return new WaitForSecondsRealtime(seconds);

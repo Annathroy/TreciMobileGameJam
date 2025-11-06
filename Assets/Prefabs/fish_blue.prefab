@@ -372,7 +372,7 @@ MonoBehaviour:
   dropChances: []
   guaranteedDrop: 1
   useWeightedRandomSelection: 1
-  overallDropChance: 0.1
+  overallDropChance: 0.2
   useGlobalDropLimiting: 1
   globalDropCooldown: 2
   maxDropsPerWave: 3
@@ -490,7 +490,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48e8a937293555445ab9a0e53b855deb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletDeathEffect
-  bulletTag: PlayerProjectile
   imageSprite1: {fileID: 21300000, guid: c8f02ce7b09cf0b41a6556362e79c8f5, type: 3}
   imageSprite2: {fileID: 21300000, guid: d72750b0d6d46104da4b1c791c4f676a, type: 3}
   gapBetween: 0.1

@@ -75,11 +75,12 @@ MonoBehaviour:
   - {fileID: 2800000, guid: af57abcad0084ca4fa8ef2e46520b11c, type: 3}
   - {fileID: 2800000, guid: 25095d0067894ab4a96f4f49d070f4dd, type: 3}
   - {fileID: 2800000, guid: 8c772052e1f7f6d4d859e5be05582936, type: 3}
-  - {fileID: 2800000, guid: e069636605fb188478522e4181cc5d78, type: 3}
+  - {fileID: 2800000, guid: 4c293e6855062f34a8ae45293e33e663, type: 3}
   - {fileID: 2800000, guid: b03238757a11ebf40b69a7636928100a, type: 3}
-  - {fileID: 0}
+  - {fileID: 2800000, guid: e069636605fb188478522e4181cc5d78, type: 3}
   spriteSize: {x: 1, y: 1}
   spriteTint: {r: 1, g: 1, b: 1, a: 1}
   enablePulseAnimation: 1
   pulseSpeed: 2
   pulseIntensity: 0.2
+  transparency: 0.5

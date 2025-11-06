@@ -1407,18 +1407,23 @@ MonoBehaviour:
   rootCanvas: {fileID: 1274455514}
   markerPrefab: {fileID: 1354293167}
   markerColor: {r: 1, g: 0, b: 0, a: 1}
+  markerFlashA: {fileID: 21300000, guid: e41add6953db4ea4dbb02ea631ce8492, type: 3}
+  markerFlashB: {fileID: 21300000, guid: 413cfe2c199590e4295b369fef05b0ae, type: 3}
+  markerFlashHz: 4
+  markerPreserveAspect: 1
+  markerUseNativeSize: 0
   tentaclePrefab: {fileID: 124844819815590154, guid: 0f886c39ff3f62a4f814e6f44a5bb00c, type: 3}
   tentacleGraphicRoot: {fileID: 0}
   tentacleGraphicChildPath: "tentacle_1/B\xE9zierCircle"
   mainCam: {fileID: 2013930484}
   attackPlaneY: 0
+  debugFreezeAtPeak: 0
   lengthAxis: 0
   extendTime: 0.35
   holdTime: 0.2
   retractTime: 0.15
   stabPlaybackSpeed: 0.7
   minPeakSeconds: 0.25
-  debugFreezeAtPeak: 0
   minLength: 1
   extraLengthMargin: 1
   stabLengthMultiplier: 0.01
@@ -2231,6 +2236,72 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &1048343732
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1048343733}
+  - component: {fileID: 1048343734}
+  m_Layer: 0
+  m_Name: SharkAttackTelegraph
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1048343733
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1048343732}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1651821928}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1048343734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1048343732}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e919cbc106bea44a9d00a17b8fe5fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SharkTelegraphBottomRow
+  firstAttackDelay: 2
+  cycleInterval: 10
+  warnDuration: 1.2
+  appearDuration: 0.5
+  stayDuration: 1.25
+  retreatDuration: 0.75
+  useUnscaledTime: 1
+  rootCanvas: {fileID: 1274455514}
+  markerPrefab: {fileID: 0}
+  markerTint: {r: 1, g: 0.2, b: 0.2, a: 0.85}
+  markerFlashA: {fileID: 21300000, guid: 9ea3b981b0810914f9e1b9d13f796999, type: 3}
+  markerFlashB: {fileID: 21300000, guid: bafe309fac66c674cac2e7ea4cb0e5bb, type: 3}
+  markerFlashHz: 4
+  markerPreserveAspect: 1
+  sharkPrefab: {fileID: 7544459093520880534, guid: b42e8d29dba41c04688f95c08b248576, type: 3}
+  mainCam: {fileID: 2013930484}
+  attackPlaneY: 0
+  spawnBelowOffset: 3
+  appearHeight: 4
+  sharkScaleMultiplier: 2.5
+  prefabExtraEuler: {x: 0, y: 90, z: 0}
+  destroyOnExit: 1
 --- !u!1 &1106120608
 GameObject:
   m_ObjectHideFlags: 0
@@ -3291,6 +3362,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 569472123}
+  - {fileID: 1048343733}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1686979617 stripped
@@ -3419,11 +3491,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0244561c56e5a6845a013fdf66a7be59, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InvulnerabilityPowerUp
-  duration: 5
+  duration: 2
   maxStacks: 4
   refreshOnPickup: 1
   independentStackTimers: 0
-  slot: 0
+  slot: 2
+  bubbleSprite: {fileID: 21300000, guid: c15747a0576323d4fb0f531969efe0e0, type: 3}
+  bubbleSize: {x: 5, y: 5}
+  bubbleOffset: {x: 0, y: 1, z: 0}
+  bubbleTint: {r: 1, g: 1, b: 1, a: 1}
+  bubbleTransparency: 0
+  enablePulseAnimation: 1
+  pulseSpeed: 3
+  pulseIntensity: 0.15
 --- !u!4 &1745336252
 Transform:
   m_ObjectHideFlags: 0
@@ -3797,7 +3877,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91722f41c242f1f42902ee43715363b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPool
-  prefab: {fileID: 8997685689680090851, guid: 84537c9a6735df144841667bdc211c17, type: 3}
+  prefab: {fileID: 2506786259695424323, guid: 2e3bea1d84c49e944b6596168eb57385, type: 3}
   prewarm: 10
   container: {fileID: 0}
 --- !u!4 &1852879377
@@ -15195,7 +15275,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8153222018014219166, guid: 35b16638ec446bb4a970231ef4bf10fe, type: 3}
       propertyPath: flashInterval
-      value: 0
+      value: 0.001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

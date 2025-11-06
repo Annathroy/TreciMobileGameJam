@@ -141,7 +141,7 @@ MonoBehaviour:
   dropChances: []
   guaranteedDrop: 1
   useWeightedRandomSelection: 1
-  overallDropChance: 0.1
+  overallDropChance: 0.2
   useGlobalDropLimiting: 1
   globalDropCooldown: 2
   maxDropsPerWave: 3
