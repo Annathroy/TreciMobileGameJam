@@ -32,10 +32,10 @@ public class MainMenuManager : MonoBehaviour
         if (startMenuPanel) startMenuPanel.SetActive(true);
         if (optionsPanel) optionsPanel.SetActive(false);
 
-        // High score
+        // High score (from PlayerPrefs; Score updates this key)
         UpdateHighScoreText(PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0));
 
-        // Sliders: force sane config and own the listeners
+        // Sliders
         if (volumeSlider)
         {
             volumeSlider.minValue = 0f;
@@ -53,7 +53,7 @@ public class MainMenuManager : MonoBehaviour
             sfxVolumeSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
         }
 
-        // Setup toggles
+        // Toggles
         if (musicToggle)
         {
             musicToggle.onValueChanged.RemoveAllListeners();
@@ -71,7 +71,6 @@ public class MainMenuManager : MonoBehaviour
         {
             am.EnsureMusicPlaying();
 
-            // Default away from muted prefs
             if (am.musicVolume <= 0.001f) am.SetMusicVolume(0.8f);
             if (am.sfxVolume <= 0.001f) am.SetSfxVolume(0.8f);
 
@@ -101,6 +100,10 @@ public class MainMenuManager : MonoBehaviour
             Debug.LogError("[MainMenuManager] gameplaySceneName is empty.");
             return;
         }
+
+        // Start a fresh session score (does not affect HighScore)
+        Score.ResetRun();
+
         SceneManager.LoadScene("MislavTestScene");
     }
 

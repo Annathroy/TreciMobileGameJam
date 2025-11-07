@@ -121,6 +121,7 @@ public class Projectile : MonoBehaviour, IDamageDealer, IOnHitTarget
 
         if (destroyOnHit)
             Despawn();
+        Debug.Log("Hit");
     }
 
     public void ForceDespawn() => Despawn();
@@ -133,5 +134,14 @@ public class Projectile : MonoBehaviour, IDamageDealer, IOnHitTarget
         if (_consumed) return;
         _consumed = true;
         if (destroyOnHit) Despawn();
+        Debug.Log("hit");
+    }
+    private void OnDisable()
+    {
+        Debug.Log("Hit");
+    }
+    private void OnDestroy()
+    {
+        Debug.Log("hit destroyed");
     }
 }

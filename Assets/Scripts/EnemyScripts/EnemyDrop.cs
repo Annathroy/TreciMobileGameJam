@@ -5,19 +5,19 @@ public class EnemyDrop : MonoBehaviour
 {
     [Header("Drop Settings")]
     [SerializeField] private GameObject[] dropPrefabs;
-    [SerializeField] private float[] dropChances; // 0.0 to 1.0 for each prefab
+    [SerializeField] private float[] dropChances;        // 0..1 per prefab
     [SerializeField] private bool guaranteedDrop = false;
 
     [Header("Random Selection")]
     [SerializeField] private bool useWeightedRandomSelection = true;
-    [SerializeField] private float overallDropChance = 0.1f; // Overall chance that ANY drop will occur
+    [SerializeField, Range(0f, 1f)] private float overallDropChance = 0.1f;
 
     [Header("Drop Limiting")]
     [SerializeField] private bool useGlobalDropLimiting = true;
-    [SerializeField] private float globalDropCooldown = 2f; // Seconds between any drops globally
-    [SerializeField] private int maxDropsPerWave = 3; // Maximum drops allowed per enemy wave
-    [SerializeField] private float dropChanceReduction = 0.5f; // Multiply drop chances by this when many enemies present
-    [SerializeField] private int enemyThresholdForReduction = 5; // Reduce chances when more than this many enemies
+    [SerializeField] private float globalDropCooldown = 2f;
+    [SerializeField] private int maxDropsPerWave = 3;
+    [SerializeField, Range(0f, 1f)] private float dropChanceReduction = 0.5f;
+    [SerializeField] private int enemyThresholdForReduction = 5;
 
     [Header("Drop Physics")]
     [SerializeField] private float dropForce = 5f;
@@ -28,166 +28,157 @@ public class EnemyDrop : MonoBehaviour
     [SerializeField] private bool dropOnDestroy = true;
     [SerializeField] private bool dropOnHealthDeath = true;
 
-    private bool hasDropped = false; // Prevent multiple drops
+    [Header("Debug")]
+    [SerializeField] private bool verboseLogs = true;
 
-    // Static variables for global drop management
+    private bool hasDropped = false;
+
+    // Global state
     private static float lastGlobalDropTime = -1f;
     private static int currentWaveDropCount = 0;
     private static float waveStartTime = -1f;
-    private const float WAVE_RESET_TIME = 10f; // Reset wave counter every 10 seconds
+    private const float WAVE_RESET_TIME = 10f;
+
+    // --- Lifecycle ---
+
+    private void Awake() { Log("Awake"); }
+    private void OnEnable() { Log("OnEnable"); }
 
     private void Start()
     {
-        // Initialize wave timing if this is the first enemy
-        if (waveStartTime < 0f)
-        {
-            waveStartTime = Time.time;
-        }
+        Log("Start");
+        if (waveStartTime < 0f) waveStartTime = Time.time;
 
-        // Ensure arrays match
-       
-        // Try to hook into enemy death if there's a health component
         if (dropOnHealthDeath)
         {
-            var krakenHealth = GetComponent<KrakenHealth>();
-            if (krakenHealth != null)
-            {
-                krakenHealth.onDeath.AddListener(TriggerDrop);
-            }
+            var kh = GetComponent<KrakenHealth>();
+            if (kh != null) { kh.onDeath.AddListener(TriggerDrop); Log("Hooked KrakenHealth.onDeath"); }
 
-            var enemyHealth = GetComponent<EnemyHealth>();
-            if (enemyHealth != null)
-            {
-                enemyHealth.onDeath.AddListener(TriggerDrop);
-            }
+            var eh = GetComponent<EnemyHealth>();
+            if (eh != null) { eh.onDeath.AddListener(TriggerDrop); Log("Hooked EnemyHealth.onDeath"); }
         }
     }
 
     private void OnDisable()
     {
+        Log($"OnDisable (dropOnDestroy={dropOnDestroy}, hasDropped={hasDropped})");
         if (dropOnDestroy && !hasDropped)
         {
             TriggerDrop();
         }
     }
 
+    // --- Main ---
+
     public void TriggerDrop()
     {
-        // Prevent multiple drops from the same enemy
-        if (hasDropped || dropPrefabs == null || dropPrefabs.Length == 0) return;
+        Log("TriggerDrop() ENTER");
 
-        // Global drop limiting
-        if (useGlobalDropLimiting && !CanDropGlobally()) return;
+        if (hasDropped)
+        {
+            Log("Already dropped once, abort.");
+            return;
+        }
+        if (dropPrefabs == null || dropPrefabs.Length == 0)
+        {
+            Log("No dropPrefabs assigned, abort.");
+            return;
+        }
+
+        // If globally blocked, no roll occurs -> no +5
+        if (useGlobalDropLimiting && !CanDropGlobally())
+        {
+            Log("Global limit blocked roll; no score.");
+            return;
+        }
 
         hasDropped = true;
 
-        float adjustedChanceMultiplier = GetAdjustedChanceMultiplier();
-        float finalDropChance = overallDropChance * adjustedChanceMultiplier;
+        float adjusted = GetAdjustedChanceMultiplier();
+        float finalDropChance = Mathf.Clamp01(overallDropChance * adjusted);
+        Log($"AdjustedChanceMult={adjusted:F3}, finalDropChance={finalDropChance:F3}, guaranteed={guaranteedDrop}");
 
-        // First check if we should drop anything at all
-        if (!guaranteedDrop && Random.Range(0f, 1f) > finalDropChance)
+        // Non-guaranteed path: a real roll happens -> +5 on attempt
+        if (!guaranteedDrop)
         {
-            return; // No drop this time
+            Score.Add(5);
+            Log($"+5 for roll attempt. Current={Score.Current}, High={Score.High}");
+
+            bool rollPasses = Random.Range(0f, 1f) <= finalDropChance;
+            Log($"Roll result: {(rollPasses ? "PASS" : "FAIL")}");
+
+            if (!rollPasses)
+            {
+                // No drop; only +5 stays
+                return;
+            }
+            // else continue to do the drop (+10 below)
         }
 
-        // Select which prefab to drop
-        GameObject selectedPrefab = SelectRandomPrefab();
-
-        if (selectedPrefab != null)
+        // Guaranteed or passed roll -> perform the drop (+10)
+        var prefab = SelectRandomPrefab();
+        if (prefab != null)
         {
-            SpawnDrop(selectedPrefab);
+            SpawnDrop(prefab);
             RecordGlobalDrop();
-        }
-    }
-
-    private GameObject SelectRandomPrefab()
-    {
-        if (dropPrefabs == null || dropPrefabs.Length == 0) return null;
-
-        if (useWeightedRandomSelection && dropChances != null && dropChances.Length > 0)
-        {
-            // Weighted random selection based on drop chances
-            return SelectWeightedRandom();
+            Score.Add(10);
+            Log($"+10 for actual drop. Current={Score.Current}, High={Score.High}");
         }
         else
         {
-            // Simple random selection (equal chances)
-            return SelectSimpleRandom();
+            // Edge case: said yes to drop but nothing to spawn; still count as drop
+            RecordGlobalDrop();
+            Score.Add(10);
+            LogWarning("Drop approved but no prefab available. Counted +10 anyway.");
         }
     }
 
-    private GameObject SelectWeightedRandom()
+    // Forced drop: no roll (+5). Always +10 for actual drop.
+    public void ForceDrop(int dropIndex = -1)
     {
-        // Calculate total weight
-        float totalWeight = 0f;
-        for (int i = 0; i < Mathf.Min(dropPrefabs.Length, dropChances.Length); i++)
+        Log("ForceDrop()");
+
+        if (dropPrefabs == null || dropPrefabs.Length == 0)
         {
-            if (dropPrefabs[i] != null)
-            {
-                totalWeight += dropChances[i];
-            }
+            Log("No dropPrefabs assigned, abort force.");
+            return;
         }
 
-        if (totalWeight <= 0f) return SelectSimpleRandom();
-
-        // Random selection based on weights
-        float randomValue = Random.Range(0f, totalWeight);
-        float currentWeight = 0f;
-
-        for (int i = 0; i < Mathf.Min(dropPrefabs.Length, dropChances.Length); i++)
+        GameObject chosen = null;
+        if (dropIndex >= 0 && dropIndex < dropPrefabs.Length) chosen = dropPrefabs[dropIndex];
+        if (!chosen) chosen = SelectRandomPrefab();
+        if (!chosen)
         {
-            if (dropPrefabs[i] == null) continue;
-
-            currentWeight += dropChances[i];
-            if (randomValue <= currentWeight)
-            {
-                return dropPrefabs[i];
-            }
+            Log("No valid prefab to force-drop.");
+            return;
         }
 
-        // Fallback to last valid prefab
-        for (int i = dropPrefabs.Length - 1; i >= 0; i--)
-        {
-            if (dropPrefabs[i] != null) return dropPrefabs[i];
-        }
-
-        return null;
+        SpawnDrop(chosen);
+        RecordGlobalDrop();
+        Score.Add(10);
+        Log($"+10 (forced drop). Current={Score.Current}, High={Score.High}");
     }
 
-    private GameObject SelectSimpleRandom()
-    {
-        // Filter out null prefabs
-        var validPrefabs = new System.Collections.Generic.List<GameObject>();
-        foreach (var prefab in dropPrefabs)
-        {
-            if (prefab != null) validPrefabs.Add(prefab);
-        }
-
-        if (validPrefabs.Count == 0) return null;
-
-        // Random selection from valid prefabs
-        int randomIndex = Random.Range(0, validPrefabs.Count);
-        return validPrefabs[randomIndex];
-    }
+    // --- Helpers ---
 
     private bool CanDropGlobally()
     {
-        // Reset wave counter if enough time has passed
         if (Time.time - waveStartTime > WAVE_RESET_TIME)
         {
             currentWaveDropCount = 0;
             waveStartTime = Time.time;
+            Log("Wave window reset.");
         }
 
-        // Check global cooldown
         if (Time.time - lastGlobalDropTime < globalDropCooldown)
         {
+            Log($"Global cooldown active ({Time.time - lastGlobalDropTime:F2}s < {globalDropCooldown}s)");
             return false;
         }
 
-        // Check wave drop limit
         if (currentWaveDropCount >= maxDropsPerWave)
         {
+            Log($"Wave cap reached ({currentWaveDropCount}/{maxDropsPerWave}).");
             return false;
         }
 
@@ -198,131 +189,92 @@ public class EnemyDrop : MonoBehaviour
     {
         lastGlobalDropTime = Time.time;
         currentWaveDropCount++;
+        Log($"RecordGlobalDrop: waveCount={currentWaveDropCount}");
     }
 
     private float GetAdjustedChanceMultiplier()
     {
         if (!useGlobalDropLimiting) return 1f;
 
-        // Count active enemies with EnemyDrop components
-        EnemyDrop[] allEnemyDrops = Object.FindObjectsByType<EnemyDrop>(FindObjectsSortMode.None);
-        int activeEnemyCount = 0;
+        var all = Object.FindObjectsByType<EnemyDrop>(FindObjectsSortMode.None);
+        int activeCount = 0;
+        foreach (var d in all)
+            if (d.gameObject.activeInHierarchy && !d.hasDropped) activeCount++;
 
-        foreach (var enemyDrop in allEnemyDrops)
+        if (activeCount > enemyThresholdForReduction)
         {
-            if (enemyDrop.gameObject.activeInHierarchy && !enemyDrop.hasDropped)
-            {
-                activeEnemyCount++;
-            }
-        }
-
-        // Reduce drop chances when there are many enemies
-        if (activeEnemyCount > enemyThresholdForReduction)
-        {
+            Log($"High enemy count={activeCount} > threshold={enemyThresholdForReduction}, reducing chances x{dropChanceReduction}");
             return dropChanceReduction;
         }
-
         return 1f;
+    }
+
+    private GameObject SelectRandomPrefab()
+    {
+        if (dropPrefabs == null || dropPrefabs.Length == 0) return null;
+
+        if (useWeightedRandomSelection && dropChances != null && dropChances.Length > 0)
+            return SelectWeightedRandom();
+
+        return SelectSimpleRandom();
+    }
+
+    private GameObject SelectWeightedRandom()
+    {
+        float total = 0f;
+        int max = Mathf.Min(dropPrefabs.Length, dropChances.Length);
+        for (int i = 0; i < max; i++) if (dropPrefabs[i]) total += dropChances[i];
+        if (total <= 0f) return SelectSimpleRandom();
+
+        float r = Random.Range(0f, total);
+        float acc = 0f;
+        for (int i = 0; i < max; i++)
+        {
+            if (!dropPrefabs[i]) continue;
+            acc += dropChances[i];
+            if (r <= acc) return dropPrefabs[i];
+        }
+        for (int i = dropPrefabs.Length - 1; i >= 0; i--) if (dropPrefabs[i]) return dropPrefabs[i];
+        return null;
+    }
+
+    private GameObject SelectSimpleRandom()
+    {
+        var list = new System.Collections.Generic.List<GameObject>();
+        foreach (var p in dropPrefabs) if (p) list.Add(p);
+        if (list.Count == 0) return null;
+        return list[Random.Range(0, list.Count)];
     }
 
     private void SpawnDrop(GameObject prefab)
     {
-        Vector3 dropPosition = transform.position + Vector3.up * dropHeight;
+        Vector3 pos = transform.position + Vector3.up * dropHeight;
+        Vector2 circle = Random.insideUnitCircle * dropRadius;
+        pos += new Vector3(circle.x, 0f, circle.y);
 
-        // Add some random spread
-        Vector2 randomCircle = Random.insideUnitCircle * dropRadius;
-        dropPosition += new Vector3(randomCircle.x, 0, randomCircle.y);
+        var drop = Instantiate(prefab, pos, Quaternion.identity);
 
-        GameObject drop = Instantiate(prefab, dropPosition, Quaternion.identity);
-
-        // Apply physics if the drop has a Rigidbody
-        Rigidbody rb = drop.GetComponent<Rigidbody>();
-        if (rb != null)
+        var rb = drop.GetComponent<Rigidbody>();
+        if (rb)
         {
-            Vector3 randomDirection = new Vector3(
+            Vector3 dir = new Vector3(
                 Random.Range(-1f, 1f),
                 Random.Range(0.5f, 1f),
                 Random.Range(-1f, 1f)
             ).normalized;
-
-            rb.AddForce(randomDirection * dropForce, ForceMode.Impulse);
+            rb.AddForce(dir * dropForce, ForceMode.Impulse);
         }
+        Log($"Spawned drop: {prefab.name} @ {pos}");
     }
 
-    // Public method to manually trigger drops (for external scripts)
-    public void ForceDrop(int dropIndex = -1)
-    {
-        if (dropPrefabs == null || dropPrefabs.Length == 0) return;
+    // --- Logging ---
 
-        if (dropIndex >= 0 && dropIndex < dropPrefabs.Length && dropPrefabs[dropIndex] != null)
-        {
-            SpawnDrop(dropPrefabs[dropIndex]);
-        }
-        else
-        {
-            GameObject selectedPrefab = SelectRandomPrefab();
-            if (selectedPrefab != null) SpawnDrop(selectedPrefab);
-        }
+    private void Log(string msg)
+    {
+        if (verboseLogs) Debug.Log($"[EnemyDrop] {name}: {msg}", this);
     }
-
-    // Helper method to set drop chances at runtime
-    public void SetDropChance(int index, float chance)
+    private void LogWarning(string msg)
     {
-        if (dropChances == null || index < 0 || index >= dropChances.Length) return;
-        dropChances[index] = Mathf.Clamp01(chance);
-    }
-
-    // Utility method to calculate total drop chance for UI/debugging
-    public float GetTotalDropChance()
-    {
-        float multiplier = GetAdjustedChanceMultiplier();
-        return overallDropChance * multiplier;
-    }
-
-    // Get the effective chance for a specific drop type
-    public float GetDropTypeChance(int index)
-    {
-        if (!useWeightedRandomSelection || dropChances == null || index < 0 || index >= dropChances.Length)
-        {
-            // Equal chances when not using weighted selection
-            int validPrefabCount = 0;
-            foreach (var prefab in dropPrefabs)
-            {
-                if (prefab != null) validPrefabCount++;
-            }
-            return validPrefabCount > 0 ? GetTotalDropChance() / validPrefabCount : 0f;
-        }
-
-        // Calculate total weight
-        float totalWeight = 0f;
-        for (int i = 0; i < Mathf.Min(dropPrefabs.Length, dropChances.Length); i++)
-        {
-            if (dropPrefabs[i] != null) totalWeight += dropChances[i];
-        }
-
-        if (totalWeight <= 0f) return 0f;
-
-        // Return this type's share of the total drop chance
-        return GetTotalDropChance() * (dropChances[index] / totalWeight);
-    }
-
-    // Reset the drop state (useful if you want to reuse enemies from pools)
-    public void ResetDropState()
-    {
-        hasDropped = false;
-    }
-
-    // Static method to reset global drop counters (useful for new levels/waves)
-    public static void ResetGlobalDropCounters()
-    {
-        lastGlobalDropTime = -1f;
-        currentWaveDropCount = 0;
-        waveStartTime = Time.time;
-    }
-
-    void Update()
-    {
-        // This can be used for any per-frame drop logic if needed
-        // Currently empty as drops are event-driven
+        if (verboseLogs) Debug.LogWarning($"[EnemyDrop] {name}: {msg}", this);
     }
 }
