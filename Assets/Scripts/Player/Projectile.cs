@@ -6,6 +6,8 @@ public class Projectile : MonoBehaviour, IDamageDealer, IOnHitTarget
     [Header("Movement")]
     [SerializeField] private float speed = 10f;
     [SerializeField] private float lifetime = 2f;
+    [SerializeField] private Camera cam;            // leave null => Camera.main
+    [SerializeField] private float yOffset = -2f;   // spawn height offset
 
     [Header("Damage")]
     [SerializeField] private int damage = 1;
@@ -19,40 +21,82 @@ public class Projectile : MonoBehaviour, IDamageDealer, IOnHitTarget
     [SerializeField] private AudioClip hitSFX;
     [SerializeField] private float hitSFXVolume = 1f;
 
-    // Backward-compat properties required by EnemyHealth
     public int Damage => damage;
     public bool DestroyOnHit => destroyOnHit;
 
-    float timeAlive;
-    Transform tf;
-    bool _consumed; // guard vs double-processing
+    private float timeAlive;
+    private Transform tf;
+    private bool _consumed;
+    private Vector3 moveDir;
+    private float fixedY;
 
-    void Awake() { tf = transform; }
-    void OnEnable() { timeAlive = 0f; _consumed = false; }
+    void Awake()
+    {
+        tf = transform;
+        if (!cam) cam = Camera.main;
+    }
+
+    void OnEnable()
+    {
+        timeAlive = 0f;
+        _consumed = false;
+
+        // Force exact world rotation from your JSON
+        tf.rotation = new Quaternion(-0.5f, -0.5f, -0.5f, -0.5f);
+
+        // Set absolute Y offset once
+        fixedY = tf.position.y + yOffset;
+        tf.position = new Vector3(tf.position.x, fixedY, tf.position.z);
+
+        // Direction: toward top of screen (camera up, flattened to XZ)
+        Vector3 screenUp = cam ? cam.transform.up : Vector3.forward;
+        moveDir = Vector3.ProjectOnPlane(screenUp, Vector3.up);
+        if (moveDir.sqrMagnitude < 1e-6f) moveDir = Vector3.forward;
+        moveDir.Normalize();
+
+        // --- IGNORE ANYTHING WITH PlayerDeath COMPONENT ---
+        Collider myCol = GetComponent<Collider>();
+        if (myCol)
+        {
+            PlayerDeath[] playerDeaths = FindObjectsOfType<PlayerDeath>(includeInactive: false);
+            foreach (var pd in playerDeaths)
+            {
+                Collider otherCol = pd.GetComponent<Collider>();
+                if (otherCol)
+                    Physics.IgnoreCollision(myCol, otherCol, true);
+            }
+        }
+    }
 
     void Update()
     {
-        tf.position += tf.forward * speed * Time.deltaTime;
+        // Move in world-space, lock Y
+        Vector3 pos = tf.position + moveDir * speed * Time.deltaTime;
+        pos.y = fixedY;
+        tf.position = pos;
+
         timeAlive += Time.deltaTime;
-        if (timeAlive >= lifetime) Despawn();
+        if (timeAlive >= lifetime)
+            Despawn();
     }
 
-    // Only used if you enable "applyDamageOnTrigger"
     void OnTriggerEnter(Collider other)
     {
         if (_consumed || !applyDamageOnTrigger) return;
 
-        // Prefer KrakenHealth (boss) — common grunts with EnemyHealth will self-handle.
+        // Skip any object that has PlayerDeath component (extra safeguard)
+        if (other.GetComponent<PlayerDeath>() || other.GetComponentInParent<PlayerDeath>())
+            return;
+
         var kh = other.GetComponent<KrakenHealth>() ?? other.GetComponentInParent<KrakenHealth>();
         if (kh != null)
         {
             Vector3 hitPoint = other.ClosestPoint(tf.position);
-            bool did = kh.TakeDamage(damage, hitPoint, tf.position);
-            if (did) Consume(hitPoint);
+            if (kh.TakeDamage(damage, hitPoint, tf.position))
+                Consume(hitPoint);
             return;
         }
 
-        // Fallback: if no KrakenHealth present, try EnemyHealth *only if* they didn't already handle it.
         var eh = other.GetComponent<EnemyHealth>() ?? other.GetComponentInParent<EnemyHealth>();
         if (eh != null)
         {
@@ -71,18 +115,20 @@ public class Projectile : MonoBehaviour, IDamageDealer, IOnHitTarget
             var vfx = Instantiate(hitVFX, at, Quaternion.identity);
             Destroy(vfx, 2f);
         }
+
         if (hitSFX)
             AudioSource.PlayClipAtPoint(hitSFX, at, hitSFXVolume);
 
-        if (destroyOnHit) Despawn();
+        if (destroyOnHit)
+            Despawn();
     }
 
     public void ForceDespawn() => Despawn();
-    void Despawn() { gameObject.SetActive(false); }
+    void Despawn() => gameObject.SetActive(false);
 
     // ---- Interfaces ----
-    public int GetDamage() => damage;              // IDamageDealer (KrakenHealth reads this)
-    public void OnHit(GameObject target)           // IOnHitTarget (KrakenHealth can notify us)
+    public int GetDamage() => damage;
+    public void OnHit(GameObject target)
     {
         if (_consumed) return;
         _consumed = true;

@@ -187,7 +187,7 @@ MonoBehaviour:
   spawnIntervalRange: {x: 3, y: 7}
   startDelay: 7.5
   playOnStart: 1
-  maxConcurrent: 4
+  maxConcurrent: 2
   warmStartSpawns: 0
   enableRamp: 0
   rampPeriod: 20
@@ -1809,11 +1809,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 276070177}
-  - {fileID: 8732211876132269113}
-  - {fileID: 1770733231}
-  - {fileID: 1686979618}
-  - {fileID: 1952453433}
-  - {fileID: 1136140810}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &664985062
@@ -2832,72 +2827,6 @@ MonoBehaviour:
   autoStart: 1
   speedMin: 5
   speedMax: 5
---- !u!1 &1136140809 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-  m_PrefabInstance: {fileID: 2123419326}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1136140810 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-  m_PrefabInstance: {fileID: 2123419326}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1136140811
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1136140809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4aaf5ff56ac909e40a29d964d4860e9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PufferFish
-  spikePool: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
-  spikesPerWave: 24
-  inflateScaleMultiplier: 1
-  inflateTime: 0.15
-  inflatedDuration: 0.5
-  deflateTime: 0.15
-  fireOrigin: {fileID: 0}
-  autoFindSpikePool: 1
-  spikePoolTag: SpikePool
-  requireProjectileInPrefab: 0
-  moveSpeed: 7
-  moveDelay: 0.5
-  maxJumps: 4
-  flipModelForward: 1
-  attackBoolParameter: isAttacking
-  attackTriggerParameter: spikes_out
-  useAttackTrigger: 1
-  runOutSpeed: 10
-  runOutMaxTime: 4
-  offscreenMargin: 3
-  destroyOnEnd: 0
---- !u!136 &1136140812
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1136140809}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 1
-  m_Height: 3.68
-  m_Direction: 2
-  m_Center: {x: 0, y: 0, z: -0.2}
 --- !u!1 &1191558044
 GameObject:
   m_ObjectHideFlags: 0
@@ -3237,73 +3166,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!1001 &1277811043
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 615953120}
-    m_Modifications:
-    - target: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_Name
-      value: PufferFishEnemy (3)
-      objectReference: {fileID: 0}
-    - target: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 9.27
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.58948
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -4.97
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1686979620}
-    - targetCorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1686979619}
-  m_SourcePrefab: {fileID: 100100000, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
 --- !u!1 &1322128274
 GameObject:
   m_ObjectHideFlags: 0
@@ -3504,84 +3366,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8614043551383704568, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
   m_PrefabInstance: {fileID: 799330653}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1385601243 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
-  m_PrefabInstance: {fileID: 799330653}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 256bc2687d5719040aeb0b0d1a4249cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SimplePool
---- !u!1001 &1450101717
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 615953120}
-    m_Modifications:
-    - target: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_Name
-      value: PufferFishEnemy (2)
-      objectReference: {fileID: 0}
-    - target: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 9.14
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.58948
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0.076930046
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1770733233}
-    - targetCorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1770733232}
-  m_SourcePrefab: {fileID: 100100000, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
 --- !u!1 &1556877074
 GameObject:
   m_ObjectHideFlags: 0
@@ -3893,72 +3677,6 @@ Transform:
   - {fileID: 1048343733}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1686979617 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-  m_PrefabInstance: {fileID: 1277811043}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1686979618 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-  m_PrefabInstance: {fileID: 1277811043}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1686979619
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1686979617}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4aaf5ff56ac909e40a29d964d4860e9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PufferFish
-  spikePool: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
-  spikesPerWave: 24
-  inflateScaleMultiplier: 1
-  inflateTime: 0.15
-  inflatedDuration: 0.5
-  deflateTime: 0.15
-  fireOrigin: {fileID: 0}
-  autoFindSpikePool: 1
-  spikePoolTag: SpikePool
-  requireProjectileInPrefab: 0
-  moveSpeed: 7
-  moveDelay: 0.5
-  maxJumps: 4
-  flipModelForward: 1
-  attackBoolParameter: isAttacking
-  attackTriggerParameter: spikes_out
-  useAttackTrigger: 1
-  runOutSpeed: 10
-  runOutMaxTime: 4
-  offscreenMargin: 3
-  destroyOnEnd: 0
---- !u!136 &1686979620
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1686979617}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 1
-  m_Height: 3.68
-  m_Direction: 2
-  m_Center: {x: 0, y: 0, z: -0.2}
 --- !u!1 &1744594935
 GameObject:
   m_ObjectHideFlags: 0
@@ -4053,72 +3771,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1106120609}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1770733230 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-  m_PrefabInstance: {fileID: 1450101717}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1770733231 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-  m_PrefabInstance: {fileID: 1450101717}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1770733232
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1770733230}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4aaf5ff56ac909e40a29d964d4860e9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PufferFish
-  spikePool: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
-  spikesPerWave: 24
-  inflateScaleMultiplier: 1
-  inflateTime: 0.15
-  inflatedDuration: 0.5
-  deflateTime: 0.15
-  fireOrigin: {fileID: 0}
-  autoFindSpikePool: 1
-  spikePoolTag: SpikePool
-  requireProjectileInPrefab: 0
-  moveSpeed: 7
-  moveDelay: 0.5
-  maxJumps: 4
-  flipModelForward: 1
-  attackBoolParameter: isAttacking
-  attackTriggerParameter: spikes_out
-  useAttackTrigger: 1
-  runOutSpeed: 10
-  runOutMaxTime: 4
-  offscreenMargin: 3
-  destroyOnEnd: 0
---- !u!136 &1770733233
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1770733230}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 1
-  m_Height: 3.68
-  m_Direction: 2
-  m_Center: {x: 0, y: 0, z: -0.2}
 --- !u!1 &1779240661
 GameObject:
   m_ObjectHideFlags: 0
@@ -4604,72 +4256,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1106120609}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1952453432 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-  m_PrefabInstance: {fileID: 2088860096}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1952453433 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-  m_PrefabInstance: {fileID: 2088860096}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1952453434
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1952453432}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4aaf5ff56ac909e40a29d964d4860e9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PufferFish
-  spikePool: {fileID: 973314187478181267, guid: 36b1e90ff141bc049b2aed4343ca2498, type: 3}
-  spikesPerWave: 24
-  inflateScaleMultiplier: 1
-  inflateTime: 0.15
-  inflatedDuration: 0.5
-  deflateTime: 0.15
-  fireOrigin: {fileID: 0}
-  autoFindSpikePool: 1
-  spikePoolTag: SpikePool
-  requireProjectileInPrefab: 0
-  moveSpeed: 7
-  moveDelay: 0.5
-  maxJumps: 4
-  flipModelForward: 1
-  attackBoolParameter: isAttacking
-  attackTriggerParameter: spikes_out
-  useAttackTrigger: 1
-  runOutSpeed: 10
-  runOutMaxTime: 4
-  offscreenMargin: 3
-  destroyOnEnd: 0
---- !u!136 &1952453435
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1952453432}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 1
-  m_Height: 3.68
-  m_Direction: 2
-  m_Center: {x: 0, y: 0, z: -0.2}
 --- !u!1 &2009344607
 GameObject:
   m_ObjectHideFlags: 0
@@ -5072,140 +4658,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1271945241}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &2088860096
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 615953120}
-    m_Modifications:
-    - target: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_Name
-      value: PufferFishEnemy (4)
-      objectReference: {fileID: 0}
-    - target: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -10.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.58948
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -3.95
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1952453435}
-    - targetCorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1952453434}
-  m_SourcePrefab: {fileID: 100100000, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
---- !u!1001 &2123419326
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 615953120}
-    m_Modifications:
-    - target: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_Name
-      value: PufferFishEnemy (5)
-      objectReference: {fileID: 0}
-    - target: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 11.09
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.58948
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 5.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8732211875703207585, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1136140812}
-    - targetCorrespondingSourceObject: {fileID: 8242955948340866075, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1136140811}
-  m_SourcePrefab: {fileID: 100100000, guid: 2e90168e65ca4894d8904fa04ef6743e, type: 3}
 --- !u!1 &979567156595988333
 GameObject:
   m_ObjectHideFlags: 0
@@ -15589,7 +15041,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxLives: 4
   lives: 0
-  godMode: 1
+  godMode: 0
   enemyTag: Enemy
   enemyProjectileTag: EnemyProjectile
   damageFromEnemy: 1
@@ -15727,79 +15179,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!1001 &8058398844253975589
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 615953120}
-    m_Modifications:
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -9.14
-      objectReference: {fileID: 0}
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.58948
-      objectReference: {fileID: 0}
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 5.34
-      objectReference: {fileID: 0}
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3498658688403112512, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_Name
-      value: PufferFishEnemy (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 3498658688403112512, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3562361458165798966, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: maxJumps
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 3562361458165798966, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: spikePool
-      value: 
-      objectReference: {fileID: 1385601243}
-    - target: {fileID: 3562361458165798966, guid: d77df02f424b55c408427692510bd277, type: 3}
-      propertyPath: inflateScaleMultiplier
-      value: 1
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: d77df02f424b55c408427692510bd277, type: 3}
 --- !u!1 &8245136096660856860
 GameObject:
   m_ObjectHideFlags: 0
@@ -15818,11 +15197,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8732211876132269113 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2193784193462202606, guid: d77df02f424b55c408427692510bd277, type: 3}
-  m_PrefabInstance: {fileID: 8058398844253975589}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &8765821576319920701
 GameObject:
   m_ObjectHideFlags: 0

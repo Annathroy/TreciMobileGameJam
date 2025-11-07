@@ -7,7 +7,9 @@ public class PufferWaypointManager : MonoBehaviour
 
     [SerializeField] private Transform waypointsParent;
     public List<Transform> Waypoints { get; private set; } = new List<Transform>();
-    private bool[] occupied;
+
+    // Tracks who claimed each slot (0 = free). Use caller.GetInstanceID() as owner.
+    private int[] ownerIds;
 
     void Awake()
     {
@@ -25,30 +27,96 @@ public class PufferWaypointManager : MonoBehaviour
         foreach (Transform t in waypointsParent)
             Waypoints.Add(t);
 
-        occupied = new bool[Waypoints.Count];
+        ownerIds = new int[Waypoints.Count]; // zeroed = free
     }
 
-    public int GetFreeWaypoint()
-    {
-        List<int> free = new List<int>();
-        for (int i = 0; i < occupied.Length; i++)
-            if (!occupied[i]) free.Add(i);
+    // ---- PUBLIC API (owner-aware) ----
 
-        if (free.Count == 0) return -1;
-        int chosen = free[Random.Range(0, free.Count)];
-        occupied[chosen] = true;
-        return chosen;
+    // Claim any free waypoint for this owner. Returns -1 if none.
+    public int GetFreeWaypoint(int ownerId)
+    {
+        CleanupNulls();
+        // Collect free indices
+        int count = Waypoints.Count;
+        int picked = -1;
+
+        // Random free selection
+        // (simple linear scan + random start offset to avoid clustering)
+        if (count == 0) return -1;
+        int start = Random.Range(0, count);
+        for (int step = 0; step < count; step++)
+        {
+            int i = (start + step) % count;
+            if (ownerIds[i] == 0)
+            {
+                picked = i;
+                break;
+            }
+        }
+
+        if (picked != -1) ownerIds[picked] = ownerId;
+        return picked;
     }
 
-    public void ReleaseWaypoint(int index)
+    // Release only if you own it.
+    public void ReleaseWaypoint(int index, int ownerId)
     {
-        if (index >= 0 && index < occupied.Length)
-            occupied[index] = false;
+        if (!IndexValid(index)) return;
+        if (ownerIds[index] == ownerId) ownerIds[index] = 0;
     }
 
-    public Transform GetWaypoint(int index)
+    // Get transform if still valid AND still owned by you. Otherwise return null.
+    public Transform GetWaypoint(int index, int ownerId)
     {
-        if (index < 0 || index >= Waypoints.Count) return null;
-        return Waypoints[index];
+        if (!IndexValid(index)) return null;
+        if (ownerIds[index] != ownerId) return null; // no longer yours
+        var t = Waypoints[index];
+        if (!t) { ownerIds[index] = 0; return null; } // cleaned up
+        return t;
+    }
+
+    // If your current index is invalid or stolen, try to give you a new one.
+    public int ValidateOrReacquire(int currentIndex, int ownerId)
+    {
+        CleanupNulls();
+
+        if (IndexValid(currentIndex) && ownerIds[currentIndex] == ownerId && Waypoints[currentIndex])
+            return currentIndex; // still yours
+
+        // Otherwise, free whatever is there and get a new one
+        if (IndexValid(currentIndex) && ownerIds[currentIndex] == ownerId)
+            ownerIds[currentIndex] = 0;
+
+        return GetFreeWaypoint(ownerId);
+    }
+
+    // ---- INTERNALS ----
+
+    private bool IndexValid(int i) => i >= 0 && i < Waypoints.Count;
+
+    // Handle destroyed/missing children at runtime
+    private void CleanupNulls()
+    {
+        // Fast path: nothing to do
+        bool anyNull = false;
+        for (int i = 0; i < Waypoints.Count; i++)
+        {
+            if (!Waypoints[i]) { anyNull = true; break; }
+        }
+        if (!anyNull) return;
+
+        // Rebuild compacted lists
+        var newList = new List<Transform>(Waypoints.Count);
+        var newOwners = new List<int>(Waypoints.Count);
+        for (int i = 0; i < Waypoints.Count; i++)
+        {
+            var t = Waypoints[i];
+            if (!t) continue; // drop null
+            newList.Add(t);
+            newOwners.Add(ownerIds[i]); // keep ownership for surviving slots
+        }
+
+        Waypoints = newList;
+        ownerIds = newOwners.ToArray();
     }
 }

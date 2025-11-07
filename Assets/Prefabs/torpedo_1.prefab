@@ -74,18 +74,43 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5cb5f20b5572986469193c2942851863, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6344538285869835042}
+      addedObject: {fileID: 6452808330441379967}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5cb5f20b5572986469193c2942851863, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6452808330441379967}
+      addedObject: {fileID: 8166711651101584189}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5cb5f20b5572986469193c2942851863, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5835160300159720101}
   m_SourcePrefab: {fileID: 100100000, guid: 5cb5f20b5572986469193c2942851863, type: 3}
 --- !u!1 &2506786259695424323 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 5cb5f20b5572986469193c2942851863, type: 3}
   m_PrefabInstance: {fileID: 3317056172752956946}
   m_PrefabAsset: {fileID: 0}
---- !u!136 &6344538285869835042
-CapsuleCollider:
+--- !u!114 &6452808330441379967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2506786259695424323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73dfe0e856eb82f408941549ff774484, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Projectile
+  speed: 15
+  lifetime: 2
+  cam: {fileID: 0}
+  yOffset: 1.5
+  damage: 2
+  destroyOnHit: 1
+  applyDamageOnTrigger: 0
+  hitVFX: {fileID: 0}
+  hitSFX: {fileID: 0}
+  hitSFXVolume: 1
+--- !u!65 &8166711651101584189
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -102,12 +127,10 @@ CapsuleCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 1
-  m_Height: 13.537306
-  m_Direction: 1
-  m_Center: {x: 0, y: -5, z: 0}
---- !u!114 &6452808330441379967
+  serializedVersion: 3
+  m_Size: {x: 8.748163, y: 13.537306, z: 5.3091297}
+  m_Center: {x: 4.3740807, y: -5.1115713, z: -0.0026159286}
+--- !u!114 &5835160300159720101
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -116,14 +139,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2506786259695424323}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 73dfe0e856eb82f408941549ff774484, type: 3}
+  m_Script: {fileID: 11500000, guid: 685942754d1351f469a424cda1f537d5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Projectile
-  speed: 15
-  lifetime: 2
-  damage: 2
-  destroyOnHit: 1
-  applyDamageOnTrigger: 0
-  hitVFX: {fileID: 0}
-  hitSFX: {fileID: 0}
-  hitSFXVolume: 1
+  m_EditorClassIdentifier: Assembly-CSharp::EnsureBoxCollider
+  trigger: 1

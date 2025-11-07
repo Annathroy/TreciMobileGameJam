@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8752582043222450821}
   - component: {fileID: 6730061097581299618}
   - component: {fileID: 7845543258895468437}
+  - component: {fileID: 3192765845497082759}
   m_Layer: 0
   m_Name: torpedo_1
   m_TagString: Untagged
@@ -108,7 +109,7 @@ CapsuleCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_Radius: 1
   m_Height: 13.537306
@@ -128,12 +129,35 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
   speed: 15
   lifetime: 2
+  cam: {fileID: 0}
+  yOffset: -2
   damage: 2
   destroyOnHit: 1
   applyDamageOnTrigger: 0
   hitVFX: {fileID: 0}
   hitSFX: {fileID: 0}
   hitSFXVolume: 1
+--- !u!65 &3192765845497082759
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2340710456965803528}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 49.542145, y: 13.537306, z: 5.317029}
+  m_Center: {x: 24.771072, y: -5.1115713, z: 0.0013337135}
 --- !u!1 &4232221863882344027
 GameObject:
   m_ObjectHideFlags: 0
@@ -160,7 +184,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3184686725420334305}
