@@ -169,7 +169,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &83497022
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -185,9 +185,9 @@ MonoBehaviour:
   pool: {fileID: 0}
   prefab: {fileID: 3562361458165798966, guid: d77df02f424b55c408427692510bd277, type: 3}
   spawnIntervalRange: {x: 3, y: 7}
-  startDelay: 7.5
+  startDelay: 1
   playOnStart: 1
-  maxConcurrent: 2
+  maxConcurrent: 4
   warmStartSpawns: 0
   enableRamp: 0
   rampPeriod: 20
@@ -3539,7 +3539,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Spawners
   spawners:
   - {fileID: 727992944}
-  - {fileID: 83497021}
   - {fileID: 1594073291}
   - {fileID: 464270281}
   delayBetweenSpawners: 15
@@ -15364,6 +15363,6 @@ SceneRoots:
   - {fileID: 1271945241}
   - {fileID: 9177250302791263528}
   - {fileID: 6044884595327183142}
-  - {fileID: 464270283}
   - {fileID: 83497023}
+  - {fileID: 464270283}
   - {fileID: 1624789395}

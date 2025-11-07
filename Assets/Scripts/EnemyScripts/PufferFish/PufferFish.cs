@@ -36,6 +36,14 @@ public class PufferFish : MonoBehaviour
     [SerializeField] private float offscreenMargin = 3f;
     [SerializeField] private bool destroyOnEnd = false;
 
+    [Header("Entry")]
+    [SerializeField] private float entryOffset = 2f;        // spawn just outside this far
+    [SerializeField] private float entryInset = 0.75f;      // first aim point just inside the edge
+    [SerializeField] private float entryTimeout = 3f;       // seconds before we snap inside
+    [SerializeField] private bool useUnscaledTime = false;  // move even if paused
+    [SerializeField] private bool enterFromBottom = true;   // force from bottom edge
+    [SerializeField] private bool debugLog = false;
+
     private Vector3 baseScale;
     private Camera cam;
     private PufferWaypointManager mgr;
@@ -79,12 +87,17 @@ public class PufferFish : MonoBehaviour
         if (!spikePool && autoFindSpikePool)
             ResolveSpikePool();
 
+        // Deterministic spawn just outside the bottom (or top) at current Y
         if (cam)
         {
-            Bounds bnd = CameraXZBounds(cam);
-            Vector3 spawn = RandomOffscreenXZ(bnd);
-            spawn.y = 0f;
-            transform.position = spawn;
+            var bnd = CameraXZBoundsAtY(cam, transform.position.y);
+            float x = Random.Range(bnd.min.x, bnd.max.x);
+            float z = enterFromBottom
+                ? bnd.min.z - (offscreenMargin + entryOffset)
+                : bnd.max.z + (offscreenMargin + entryOffset);
+
+            transform.position = new Vector3(x, transform.position.y, z);
+            if (debugLog) Debug.Log($"[PufferFish] Spawn at {transform.position}  BoundsZ[{bnd.min.z:F2},{bnd.max.z:F2}]");
         }
 
         if (!running)
@@ -106,6 +119,13 @@ public class PufferFish : MonoBehaviour
 
     IEnumerator MainRoutine()
     {
+        // Ensure we actually cross into the screen before doing anything else
+        if (cam)
+        {
+            var bnd = CameraXZBoundsAtY(cam, transform.position.y);
+            yield return EnterScreen(bnd);
+        }
+
         int jumps = 0;
         while (jumps < maxJumps)
         {
@@ -115,7 +135,7 @@ public class PufferFish : MonoBehaviour
             Transform target = mgr.GetWaypoint(currentIndex, ownerId);
             if (!target) continue;
 
-            Vector3 targetPos = new Vector3(target.position.x, 0f, target.position.z);
+            Vector3 targetPos = new Vector3(target.position.x, transform.position.y, target.position.z);
             yield return MoveAndSnap(targetPos);
 
             // Validate again in case waypoint moved mid-travel
@@ -123,11 +143,11 @@ public class PufferFish : MonoBehaviour
             target = mgr.GetWaypoint(currentIndex, ownerId);
             if (!target) continue;
 
-            // Guaranteed spike each arrival
+            // Spike on arrival
             yield return ForceSpikeNow();
 
             if (moveDelay > 0f)
-                yield return new WaitForSeconds(moveDelay);
+                yield return Wait(moveDelay);
 
             jumps++;
         }
@@ -137,7 +157,6 @@ public class PufferFish : MonoBehaviour
 
     IEnumerator AcquireWaypoint()
     {
-        // If we already hold one, release before acquiring a new one
         if (currentIndex != -1)
         {
             mgr.ReleaseWaypoint(currentIndex, ownerId);
@@ -148,7 +167,7 @@ public class PufferFish : MonoBehaviour
         {
             currentIndex = mgr.GetFreeWaypoint(ownerId);
             if (currentIndex != -1) yield break;
-            yield return new WaitForSeconds(0.15f);
+            yield return Wait(0.15f);
         }
     }
 
@@ -165,21 +184,21 @@ public class PufferFish : MonoBehaviour
                 yield break;
             }
 
-            float step = moveSpeed * Time.deltaTime;
+            float step = moveSpeed * DT();
             if (step >= dist)
             {
                 transform.position = targetPos;
                 yield break;
             }
 
-            Vector3 moveDir = to / dist;
+            Vector3 moveDir = to / Mathf.Max(0.0001f, dist);
             transform.position += moveDir * step;
 
             Vector3 lookDir = flipModelForward ? -moveDir : moveDir;
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 Quaternion.LookRotation(lookDir, Vector3.up),
-                10f * Time.deltaTime);
+                10f * DT());
 
             yield return null;
         }
@@ -187,7 +206,7 @@ public class PufferFish : MonoBehaviour
 
     IEnumerator ForceSpikeNow()
     {
-        yield return TweenScale(baseScale, baseScale * inflateScaleMultiplier, inflateTime);
+        yield return TweenScale(transform.localScale, baseScale * inflateScaleMultiplier, inflateTime);
 
         if (animator)
         {
@@ -205,7 +224,7 @@ public class PufferFish : MonoBehaviour
         if (!spikePool && autoFindSpikePool) ResolveSpikePool();
         TryFireOneWave();
 
-        if (inflatedDuration > 0f) yield return new WaitForSeconds(inflatedDuration);
+        if (inflatedDuration > 0f) yield return Wait(inflatedDuration);
 
         if (animator && !useAttackTrigger && !string.IsNullOrEmpty(attackBoolParameter))
             animator.SetBool(attackBoolParameter, false);
@@ -227,7 +246,7 @@ public class PufferFish : MonoBehaviour
             float angle = i * step;
             Vector3 dir = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
             Vector3 pos = origin + dir * offset;
-            pos.y = 0f;
+            pos.y = transform.position.y;
 
             GameObject go = spikePool ? spikePool.Get() : null;
             if (!go) continue;
@@ -241,9 +260,9 @@ public class PufferFish : MonoBehaviour
     IEnumerator RunOffscreenThenDespawn()
     {
         if (!cam) cam = Camera.main;
-        Bounds bnd = CameraXZBounds(cam);
+        Bounds bnd = CameraXZBoundsAtY(cam, transform.position.y);
         Vector3 exit = RandomOffscreenXZ(bnd);
-        exit.y = 0f;
+        exit.y = transform.position.y;
 
         float elapsed = 0f;
         while (elapsed < runOutMaxTime)
@@ -252,15 +271,15 @@ public class PufferFish : MonoBehaviour
             if (dir.sqrMagnitude < 0.0025f) break;
 
             Vector3 moveDir = dir.normalized;
-            transform.position += moveDir * runOutSpeed * Time.deltaTime;
+            transform.position += moveDir * runOutSpeed * DT();
 
             Vector3 lookDir = flipModelForward ? -moveDir : moveDir;
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 Quaternion.LookRotation(lookDir, Vector3.up),
-                8f * Time.deltaTime);
+                8f * DT());
 
-            elapsed += Time.deltaTime;
+            elapsed += DT();
             yield return null;
         }
 
@@ -329,6 +348,10 @@ public class PufferFish : MonoBehaviour
     }
 
     // ----------------------- Helpers -----------------------
+    float DT() => useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+    object Wait(float t) => useUnscaledTime ? new WaitForSecondsRealtime(t) : new WaitForSeconds(t);
+
+
     float SafeRadiusXZ()
     {
         Bounds b = new Bounds(transform.position, Vector3.zero);
@@ -343,27 +366,45 @@ public class PufferFish : MonoBehaviour
         float t = 0f;
         while (t < time)
         {
-            t += Time.deltaTime;
+            t += DT();
             transform.localScale = Vector3.LerpUnclamped(from, to, t / time);
             yield return null;
         }
         transform.localScale = to;
     }
 
-    Bounds CameraXZBounds(Camera c)
-    {
-        Plane plane = new Plane(Vector3.up, Vector3.zero);
-        Ray ray;
-        Vector3[] corners = new Vector3[4];
+    // Wrapper to keep older call sites compiling if you had CameraXZBounds(cam)
+    Bounds CameraXZBounds(Camera c) => CameraXZBoundsAtY(c, transform.position.y);
 
-        ray = c.ViewportPointToRay(new Vector3(0, 0, 0)); plane.Raycast(ray, out float e0); corners[0] = ray.GetPoint(e0);
-        ray = c.ViewportPointToRay(new Vector3(1, 0, 0)); plane.Raycast(ray, out float e1); corners[1] = ray.GetPoint(e1);
-        ray = c.ViewportPointToRay(new Vector3(0, 1, 0)); plane.Raycast(ray, out float e2); corners[2] = ray.GetPoint(e2);
-        ray = c.ViewportPointToRay(new Vector3(1, 1, 0)); plane.Raycast(ray, out float e3); corners[3] = ray.GetPoint(e3);
+    // Projects the camera frustum onto the horizontal plane at yPlane (top-down friendly)
+    Bounds CameraXZBoundsAtY(Camera c, float yPlane)
+    {
+        if (!c) c = Camera.main;
+        var plane = new Plane(Vector3.up, new Vector3(0f, yPlane, 0f));
+        Vector3[] corners = new Vector3[4];
+        Vector3[] vp = { new(0, 0, 0), new(1, 0, 0), new(0, 1, 0), new(1, 1, 0) };
+
+        for (int i = 0; i < 4; i++)
+        {
+            var ray = c.ViewportPointToRay(vp[i]);
+            if (!plane.Raycast(ray, out float enter))
+            {
+                float t = (yPlane - ray.origin.y) / Mathf.Max(0.0001f, ray.direction.y);
+                enter = t;
+            }
+            corners[i] = ray.GetPoint(enter);
+        }
 
         Bounds b = new Bounds(corners[0], Vector3.zero);
         for (int i = 1; i < 4; i++) b.Encapsulate(corners[i]);
         return b;
+    }
+
+    bool InsideXZ(Bounds b, Vector3 p) => p.x >= b.min.x && p.x <= b.max.x && p.z >= b.min.z && p.z <= b.max.z;
+
+    Vector3 ClampToXZ(Bounds b, Vector3 p)
+    {
+        return new Vector3(Mathf.Clamp(p.x, b.min.x, b.max.x), p.y, Mathf.Clamp(p.z, b.min.z, b.max.z));
     }
 
     Vector3 RandomOffscreenXZ(Bounds visible)
@@ -377,6 +418,43 @@ public class PufferFish : MonoBehaviour
             case 2: z = visible.max.z + offscreenMargin; x = Random.Range(visible.min.x, visible.max.x); break;
             default: z = visible.min.z - offscreenMargin; x = Random.Range(visible.min.x, visible.max.x); break;
         }
-        return new Vector3(x, 0f, z);
+        return new Vector3(x, transform.position.y, z);
+    }
+
+    // Force a first leg that crosses the near edge into the screen; watchdog snaps inside if blocked
+    IEnumerator EnterScreen(Bounds bnd)
+    {
+        if (InsideXZ(bnd, transform.position))
+            yield break;
+
+        float x = Mathf.Clamp(transform.position.x, bnd.min.x, bnd.max.x);
+        float z = enterFromBottom ? (bnd.min.z + entryInset) : (bnd.max.z - entryInset);
+        Vector3 entryTarget = new Vector3(x, transform.position.y, z);
+
+        float elapsed = 0f;
+        while (!InsideXZ(bnd, transform.position))
+        {
+            Vector3 to = entryTarget - transform.position;
+            float dist = to.magnitude;
+            if (dist < 0.02f) break;
+
+            Vector3 dir = to / Mathf.Max(0.0001f, dist);
+            transform.position += dir * moveSpeed * DT();
+
+            Vector3 lookDir = flipModelForward ? -dir : dir;
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                Quaternion.LookRotation(lookDir, Vector3.up),
+                10f * DT());
+
+            elapsed += DT();
+            if (elapsed > entryTimeout)
+            {
+                transform.position = ClampToXZ(bnd, entryTarget);
+                if (debugLog) Debug.LogWarning("[PufferFish] Entry timeout — snapping inside.");
+                break;
+            }
+            yield return null;
+        }
     }
 }
