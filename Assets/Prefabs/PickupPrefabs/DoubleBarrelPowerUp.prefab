@@ -72,12 +72,12 @@ MonoBehaviour:
   maxLifetime: 15
   viewportMargin: 0.1
   powerUpTextures:
-  - {fileID: 2800000, guid: bb08908cbe755f04d86cdfe20a837748, type: 3}
-  - {fileID: 2800000, guid: 507c7a2b6a4eeb949861a776dd372247, type: 3}
+  - {fileID: 2800000, guid: 7e292b7380a65b742a97638bb743e147, type: 3}
+  - {fileID: 2800000, guid: b244e9eb97006d345ac00efcadf0b8d0, type: 3}
   - {fileID: 2800000, guid: 0a4ffae58b860c041bdc5b6088c85292, type: 3}
-  - {fileID: 2800000, guid: 4c293e6855062f34a8ae45293e33e663, type: 3}
+  - {fileID: 2800000, guid: 0050372fb62133f42b6a4133e98952d1, type: 3}
   - {fileID: 2800000, guid: 4fd90a5d82a8ac44eabc7cbc0391c681, type: 3}
-  - {fileID: 2800000, guid: e069636605fb188478522e4181cc5d78, type: 3}
+  - {fileID: 2800000, guid: 7c725beb033426543892b6d01549a87c, type: 3}
   spriteSize: {x: 1, y: 1}
   spriteTint: {r: 1, g: 1, b: 1, a: 1}
   enablePulseAnimation: 1
