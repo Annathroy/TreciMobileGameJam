@@ -18,8 +18,8 @@ public class MainMenuManager : MonoBehaviour
     [SerializeField] private Toggle musicToggle;      // Toggle for music on/off
     [SerializeField] private Toggle sfxToggle;        // Toggle for SFX on/off
 
-    private float lastMusicVolume = 0.8f;  // Store last non-zero volume
-    private float lastSfxVolume = 0.8f;    // Store last non-zero volume
+    private float lastMusicVolume = 0.8f;
+    private float lastSfxVolume = 0.8f;
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI highScoreText;
@@ -28,14 +28,11 @@ public class MainMenuManager : MonoBehaviour
 
     private void Awake()
     {
-        // Panels
         if (startMenuPanel) startMenuPanel.SetActive(true);
         if (optionsPanel) optionsPanel.SetActive(false);
 
-        // High score (from PlayerPrefs; Score updates this key)
         UpdateHighScoreText(PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0));
 
-        // Sliders
         if (volumeSlider)
         {
             volumeSlider.minValue = 0f;
@@ -44,6 +41,7 @@ public class MainMenuManager : MonoBehaviour
             volumeSlider.onValueChanged.RemoveAllListeners();
             volumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
         }
+
         if (sfxVolumeSlider)
         {
             sfxVolumeSlider.minValue = 0f;
@@ -53,19 +51,18 @@ public class MainMenuManager : MonoBehaviour
             sfxVolumeSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
         }
 
-        // Toggles
         if (musicToggle)
         {
             musicToggle.onValueChanged.RemoveAllListeners();
             musicToggle.onValueChanged.AddListener(OnMusicToggleChanged);
         }
+
         if (sfxToggle)
         {
             sfxToggle.onValueChanged.RemoveAllListeners();
             sfxToggle.onValueChanged.AddListener(OnSfxToggleChanged);
         }
 
-        // Init from AudioManager
         var am = AudioManager.Instance;
         if (am != null)
         {
@@ -101,7 +98,7 @@ public class MainMenuManager : MonoBehaviour
             return;
         }
 
-        // Start a fresh session score (does not affect HighScore)
+        // >>> Reset score every new session
         Score.ResetRun();
 
         SceneManager.LoadScene("MislavTestScene");
@@ -127,10 +124,8 @@ public class MainMenuManager : MonoBehaviour
         PlayerPrefs.Save();
         UpdateHighScoreText(0);
         Debug.Log("High score reset.");
-        // Example: AudioManager.Instance?.PlaySFX("click");
     }
 
-    // Slider handlers
     public void OnMusicVolumeChanged(float value)
     {
         var am = AudioManager.Instance;
@@ -139,7 +134,7 @@ public class MainMenuManager : MonoBehaviour
         am.SetMusicVolume(value);
         musicToggle?.SetIsOnWithoutNotify(value > 0f);
         if (value > 0f) lastMusicVolume = value;
-        am.EnsureMusicPlaying(); // if something stopped it, resume
+        am.EnsureMusicPlaying();
     }
 
     public void OnSfxVolumeChanged(float value)
@@ -149,7 +144,7 @@ public class MainMenuManager : MonoBehaviour
 
         am.SetSfxVolume(value);
         sfxToggle?.SetIsOnWithoutNotify(value > 0f);
-        if (value > 0f) lastSfxVolume = value; // persists; affects next SFX plays
+        if (value > 0f) lastSfxVolume = value;
     }
 
     public void OnMusicToggleChanged(bool isOn)
@@ -199,7 +194,6 @@ public class MainMenuManager : MonoBehaviour
         SceneManager.LoadScene(mainMenuSceneName);
     }
 
-    // --- Helpers ---
     private void UpdateHighScoreText(int score)
     {
         if (highScoreText) highScoreText.text = $"{score}";

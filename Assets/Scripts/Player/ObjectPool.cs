@@ -28,16 +28,14 @@ public class ObjectPool : MonoBehaviour
 
     public GameObject GetObject()
     {
-        // Purge destroyed/null entries
         while (pool.Count > 0)
         {
             var go = pool.Dequeue();
-            if (go == null) continue;           // skip dead refs
+            if (go == null) continue;
             go.SetActive(true);
             return go;
         }
 
-        // Pool empty: instantiate new
         var fresh = Instantiate(prefab, container);
         fresh.SetActive(true);
         return fresh;
@@ -45,7 +43,7 @@ public class ObjectPool : MonoBehaviour
 
     public void Return(GameObject go)
     {
-        if (!go) return;                         // already destroyed
+        if (!go) return;
         go.SetActive(false);
         go.transform.SetParent(container, false);
         pool.Enqueue(go);

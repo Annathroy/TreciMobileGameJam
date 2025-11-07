@@ -34,18 +34,26 @@ public class BulletDeathEffect : MonoBehaviour
         // run the effect from a global runner so timing still works after disable
         DelayedRunner.Run(DeathEffect(deathPos));
 
-        // IMPORTANT: pooled-friendly -> do NOT Destroy()
-        gameObject.SetActive(false); // or call yourPool.Despawn(this.gameObject);
+        // pooled-friendly
+        gameObject.SetActive(false);
     }
 
     private IEnumerator DeathEffect(Vector3 worldPos)
     {
         if (!canvas) yield break;
 
+        // spawn first image
         Image img1 = CreateTempImage(imageSprite1, worldPos);
+
+        // add score WHEN first image actually appears
+        if (img1 != null)
+            Score.Add(10);   // change to 5 if you want +5 here
+
+        // let first image live
         yield return new WaitForSeconds(lifetime);
         if (img1) Destroy(img1.gameObject);
 
+        // gap then second image
         yield return new WaitForSeconds(gapBetween);
         Image img2 = CreateTempImage(imageSprite2, worldPos);
         yield return new WaitForSeconds(lifetime);

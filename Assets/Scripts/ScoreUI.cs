@@ -1,3 +1,4 @@
+// ScoreUI.cs
 using TMPro;
 using UnityEngine;
 
@@ -5,17 +6,14 @@ using UnityEngine;
 public class ScoreUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI scoreText;
-    private int lastScore = -1;
+    private int lastShown = int.MinValue;
 
     private void Update()
     {
         if (!scoreText) return;
+        if (Score.Current == lastShown) return;
 
-        // Only update text when score changes
-        if (Score.Current != lastScore)
-        {
-            lastScore = Score.Current;
-            scoreText.text = lastScore.ToString();
-        }
+        lastShown = Score.Current;
+        scoreText.text = lastShown.ToString();
     }
 }
