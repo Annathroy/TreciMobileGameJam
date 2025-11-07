@@ -1634,9 +1634,9 @@ MonoBehaviour:
   minLength: 1
   extraLengthMargin: 1
   stabLengthMultiplier: 0.01
-  enableDamageOnlyWhenExtended: 1
   damageCollider: {fileID: 3907631421790284130, guid: 0f886c39ff3f62a4f814e6f44a5bb00c, type: 3}
   minVisibleAxisScale: 1
+  colliderThickness: 0.8
   prefabForwardAxis: 1
   prefabExtraEuler: {x: 0, y: 0, z: 0}
   forceAxisByBand: 1
@@ -15263,7 +15263,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxLives: 4
   lives: 0
-  godMode: 1
+  godMode: 0
   enemyTag: Enemy
   enemyProjectileTag: EnemyProjectile
   damageFromEnemy: 1
@@ -15346,6 +15346,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerDeath
   disablePlayerOnDeath: 1
   deathDelay: 0.1
+  pauseAfterExplosion: 1
+  useUnscaledForExplosionWait: 0
   explosionSprite: {fileID: 21300000, guid: 3879c5eb49e189145a1c4de91b22ce81, type: 3}
   explosionLifetime: 1
   explosionScale: 0.49
@@ -15360,6 +15362,7 @@ MonoBehaviour:
   onExplosionComplete:
     m_PersistentCalls:
       m_Calls: []
+  pauseController: {fileID: 0}
 --- !u!114 &7847853087970149231
 MonoBehaviour:
   m_ObjectHideFlags: 0

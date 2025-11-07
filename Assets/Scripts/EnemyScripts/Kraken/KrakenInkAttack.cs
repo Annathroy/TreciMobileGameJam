@@ -1,6 +1,6 @@
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 
 public class KrakenInkAttack : MonoBehaviour
 {
@@ -100,8 +100,8 @@ public class KrakenInkAttack : MonoBehaviour
             float maxY = -canvasHeight * 0.125f; // 3/4 down from top
 
             rectTransform.anchoredPosition = new Vector2(
-                Random.Range(-canvasWidth * 0.4f, canvasWidth * 0.4f), // Random X position
-                Random.Range(minY, maxY) // Bottom quarter of screen
+                Random.Range(-canvasWidth * 0.4f, canvasWidth * 0.4f),
+                Random.Range(minY, maxY)
             );
 
             // Random rotation
@@ -111,6 +111,11 @@ public class KrakenInkAttack : MonoBehaviour
             float randomScale = Random.Range(0.8f, 1.2f);
             rectTransform.localScale = new Vector3(randomScale, randomScale, 1);
         }
+
+        // ✅ Ensure splatter doesn't block any UI interactions
+        Image splatterImage = splatter.GetComponent<Image>();
+        if (splatterImage != null)
+            splatterImage.raycastTarget = false;
 
         StartCoroutine(FadeOutSplatter(splatter));
     }

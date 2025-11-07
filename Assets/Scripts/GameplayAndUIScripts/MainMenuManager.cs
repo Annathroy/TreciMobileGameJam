@@ -11,12 +11,16 @@ public class MainMenuManager : MonoBehaviour
     [Header("Panels")]
     [SerializeField] private GameObject startMenuPanel;
     [SerializeField] private GameObject optionsPanel;
+    [SerializeField] private GameObject howToPlayPanel;
+
+    [Header("How To Play UI")]
+    [SerializeField] private Button howToPlayBackButton; // assign the Back button here
 
     [Header("Audio (via AudioManager)")]
-    [SerializeField] private Slider volumeSlider;     // Music volume (0..1)
-    [SerializeField] private Slider sfxVolumeSlider;  // SFX volume (0..1)
-    [SerializeField] private Toggle musicToggle;      // Toggle for music on/off
-    [SerializeField] private Toggle sfxToggle;        // Toggle for SFX on/off
+    [SerializeField] private Slider volumeSlider;
+    [SerializeField] private Slider sfxVolumeSlider;
+    [SerializeField] private Toggle musicToggle;
+    [SerializeField] private Toggle sfxToggle;
 
     private float lastMusicVolume = 0.8f;
     private float lastSfxVolume = 0.8f;
@@ -28,46 +32,20 @@ public class MainMenuManager : MonoBehaviour
 
     private void Awake()
     {
-        if (startMenuPanel) startMenuPanel.SetActive(true);
-        if (optionsPanel) optionsPanel.SetActive(false);
-
+        ShowPanel(startMenuPanel);
         UpdateHighScoreText(PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0));
 
-        if (volumeSlider)
+        // Auto-wire the Back button so Inspector miswiring can’t break it
+        if (howToPlayBackButton != null)
         {
-            volumeSlider.minValue = 0f;
-            volumeSlider.maxValue = 1f;
-            volumeSlider.wholeNumbers = false;
-            volumeSlider.onValueChanged.RemoveAllListeners();
-            volumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
-        }
-
-        if (sfxVolumeSlider)
-        {
-            sfxVolumeSlider.minValue = 0f;
-            sfxVolumeSlider.maxValue = 1f;
-            sfxVolumeSlider.wholeNumbers = false;
-            sfxVolumeSlider.onValueChanged.RemoveAllListeners();
-            sfxVolumeSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
-        }
-
-        if (musicToggle)
-        {
-            musicToggle.onValueChanged.RemoveAllListeners();
-            musicToggle.onValueChanged.AddListener(OnMusicToggleChanged);
-        }
-
-        if (sfxToggle)
-        {
-            sfxToggle.onValueChanged.RemoveAllListeners();
-            sfxToggle.onValueChanged.AddListener(OnSfxToggleChanged);
+            howToPlayBackButton.onClick.RemoveAllListeners();
+            howToPlayBackButton.onClick.AddListener(OnBackToStartMenuPanel);
         }
 
         var am = AudioManager.Instance;
         if (am != null)
         {
             am.EnsureMusicPlaying();
-
             if (am.musicVolume <= 0.001f) am.SetMusicVolume(0.8f);
             if (am.sfxVolume <= 0.001f) am.SetSfxVolume(0.8f);
 
@@ -86,36 +64,58 @@ public class MainMenuManager : MonoBehaviour
             sfxVolumeSlider?.SetValueWithoutNotify(0.8f);
             Debug.LogWarning("[MainMenuManager] AudioManager not found in scene.");
         }
+
+        // Slider/toggle wiring
+        if (volumeSlider)
+        {
+            volumeSlider.minValue = 0f; volumeSlider.maxValue = 1f; volumeSlider.wholeNumbers = false;
+            volumeSlider.onValueChanged.RemoveAllListeners();
+            volumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+        }
+        if (sfxVolumeSlider)
+        {
+            sfxVolumeSlider.minValue = 0f; sfxVolumeSlider.maxValue = 1f; sfxVolumeSlider.wholeNumbers = false;
+            sfxVolumeSlider.onValueChanged.RemoveAllListeners();
+            sfxVolumeSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
+        }
+        if (musicToggle)
+        {
+            musicToggle.onValueChanged.RemoveAllListeners();
+            musicToggle.onValueChanged.AddListener(OnMusicToggleChanged);
+        }
+        if (sfxToggle)
+        {
+            sfxToggle.onValueChanged.RemoveAllListeners();
+            sfxToggle.onValueChanged.AddListener(OnSfxToggleChanged);
+        }
     }
 
-    // --- UI Button Hooks ---
+    // Centralized panel switching
+    private void ShowPanel(GameObject target)
+    {
+        if (startMenuPanel) startMenuPanel.SetActive(target == startMenuPanel);
+        if (optionsPanel) optionsPanel.SetActive(target == optionsPanel);
+        if (howToPlayPanel) howToPlayPanel.SetActive(target == howToPlayPanel);
+    }
+
+    // --- UI Hooks ---
+    public void OnOpenOptions() => ShowPanel(optionsPanel);
+    public void OnOpenHowToPlay() => ShowPanel(howToPlayPanel);
+
+    // Keep both names alive so old buttons still work
+    public void OnBackToStartMenuPanel() => BackToStartMenuPanel();
+    public void OnBackToStartMenu() => BackToStartMenuPanel();
+
+    private void BackToStartMenuPanel()
+    {
+        ShowPanel(startMenuPanel);
+        UpdateHighScoreText(PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0));
+    }
 
     public void OnStartGame()
     {
-        if (string.IsNullOrEmpty("MislavTestScene"))
-        {
-            Debug.LogError("[MainMenuManager] gameplaySceneName is empty.");
-            return;
-        }
-
-        // >>> Reset score every new session
         Score.ResetRun();
-
         SceneManager.LoadScene("MislavTestScene");
-    }
-
-    public void OnOpenOptions()
-    {
-        if (startMenuPanel) startMenuPanel.SetActive(false);
-        if (optionsPanel) optionsPanel.SetActive(true);
-    }
-
-    public void OnBackToStartMenu()
-    {
-        if (optionsPanel) optionsPanel.SetActive(false);
-        if (startMenuPanel) startMenuPanel.SetActive(true);
-
-        UpdateHighScoreText(PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0));
     }
 
     public void OnResetHighScore()
@@ -123,68 +123,40 @@ public class MainMenuManager : MonoBehaviour
         PlayerPrefs.DeleteKey(HIGH_SCORE_KEY);
         PlayerPrefs.Save();
         UpdateHighScoreText(0);
-        Debug.Log("High score reset.");
     }
 
-    public void OnMusicVolumeChanged(float value)
+    public void OnMusicVolumeChanged(float v)
     {
-        var am = AudioManager.Instance;
-        if (am == null) return;
-
-        am.SetMusicVolume(value);
-        musicToggle?.SetIsOnWithoutNotify(value > 0f);
-        if (value > 0f) lastMusicVolume = value;
+        var am = AudioManager.Instance; if (am == null) return;
+        am.SetMusicVolume(v);
+        musicToggle?.SetIsOnWithoutNotify(v > 0f);
+        if (v > 0f) lastMusicVolume = v;
         am.EnsureMusicPlaying();
     }
 
-    public void OnSfxVolumeChanged(float value)
+    public void OnSfxVolumeChanged(float v)
     {
-        var am = AudioManager.Instance;
-        if (am == null) return;
-
-        am.SetSfxVolume(value);
-        sfxToggle?.SetIsOnWithoutNotify(value > 0f);
-        if (value > 0f) lastSfxVolume = value;
+        var am = AudioManager.Instance; if (am == null) return;
+        am.SetSfxVolume(v);
+        sfxToggle?.SetIsOnWithoutNotify(v > 0f);
+        if (v > 0f) lastSfxVolume = v;
     }
 
-    public void OnMusicToggleChanged(bool isOn)
+    public void OnMusicToggleChanged(bool on)
     {
-        var am = AudioManager.Instance;
-        if (am == null) return;
-
-        if (isOn)
-        {
-            am.SetMusicVolume(lastMusicVolume);
-            volumeSlider?.SetValueWithoutNotify(lastMusicVolume);
-            am.EnsureMusicPlaying();
-        }
-        else
-        {
-            lastMusicVolume = am.musicVolume > 0f ? am.musicVolume : lastMusicVolume;
-            am.SetMusicVolume(0f);
-            volumeSlider?.SetValueWithoutNotify(0f);
-        }
+        var am = AudioManager.Instance; if (am == null) return;
+        if (on) { am.SetMusicVolume(lastMusicVolume); volumeSlider?.SetValueWithoutNotify(lastMusicVolume); am.EnsureMusicPlaying(); }
+        else { lastMusicVolume = am.musicVolume > 0f ? am.musicVolume : lastMusicVolume; am.SetMusicVolume(0f); volumeSlider?.SetValueWithoutNotify(0f); }
     }
 
-    public void OnSfxToggleChanged(bool isOn)
+    public void OnSfxToggleChanged(bool on)
     {
-        var am = AudioManager.Instance;
-        if (am == null) return;
-
-        if (isOn)
-        {
-            am.SetSfxVolume(lastSfxVolume);
-            sfxVolumeSlider?.SetValueWithoutNotify(lastSfxVolume);
-        }
-        else
-        {
-            lastSfxVolume = am.sfxVolume > 0f ? am.sfxVolume : lastSfxVolume;
-            am.SetSfxVolume(0f);
-            sfxVolumeSlider?.SetValueWithoutNotify(0f);
-        }
+        var am = AudioManager.Instance; if (am == null) return;
+        if (on) { am.SetSfxVolume(lastSfxVolume); sfxVolumeSlider?.SetValueWithoutNotify(lastSfxVolume); }
+        else { lastSfxVolume = am.sfxVolume > 0f ? am.sfxVolume : lastSfxVolume; am.SetSfxVolume(0f); sfxVolumeSlider?.SetValueWithoutNotify(0f); }
     }
 
-    public void OnBackToMainMenu()
+    public void LoadMainMenuScene()
     {
         if (string.IsNullOrEmpty(mainMenuSceneName))
         {

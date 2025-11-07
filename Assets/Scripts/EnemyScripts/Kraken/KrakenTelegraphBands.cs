@@ -6,31 +6,26 @@ using UnityEngine.UI;
 public class KrakenTelegraphBands : MonoBehaviour
 {
     [Header("Grid (rows x cols)")]
-    [SerializeField] private int rows = 4;   // needs >= 3 if excluding edges
-    [SerializeField] private int cols = 3;   // columns currently unused
-
-    // true: "row" is vertical X-band (LEFT↔RIGHT stab); false: horizontal Z-band (TOP↔BOTTOM).
+    [SerializeField] private int rows = 4;
+    [SerializeField] private int cols = 3;
     [SerializeField] private bool rowsAreXBands = true;
 
     [Header("Timing")]
-    [SerializeField] private float cycleInterval = 5f;       // total cycle
-    [SerializeField] private float warnDuration = 1.5f;      // telegraph on screen
-    [SerializeField] private bool useUnscaledTime = true;    // ignore Time.timeScale (but still freeze when paused)
+    [SerializeField] private float cycleInterval = 5f;
+    [SerializeField] private float warnDuration = 1.5f;
+    [SerializeField] private bool useUnscaledTime = true;
 
     [Header("UI (Screen Space)")]
     [SerializeField] private Canvas rootCanvas;
     [SerializeField] private Image markerPrefab;
     [SerializeField] private Color markerColor = new Color(1f, 0f, 0f, 0.6f);
 
-    // flashing sprites / options
-    [SerializeField] private Sprite markerFlashA;            // assign PNG A
-    [SerializeField] private Sprite markerFlashB;            // assign PNG B
-    [SerializeField, Tooltip("How many swaps per second (A↔B↔A...)")]
+    [SerializeField] private Sprite markerFlashA;
+    [SerializeField] private Sprite markerFlashB;
+    [SerializeField, Tooltip("A↔B swaps per second")]
     private float markerFlashHz = 8f;
-    [SerializeField, Tooltip("If true, keep image aspect (no stretching).")]
-    private bool markerPreserveAspect = true;
-    [SerializeField, Tooltip("If true, set native size on the image instead of cell size.")]
-    private bool markerUseNativeSize = false;
+    [SerializeField] private bool markerPreserveAspect = true;
+    [SerializeField] private bool markerUseNativeSize = false;
 
     [Header("Tentacle (world-space)")]
     [SerializeField] private GameObject tentaclePrefab;      // pivot at base
@@ -42,12 +37,12 @@ public class KrakenTelegraphBands : MonoBehaviour
     [Header("Stab Animation")]
     [SerializeField] private bool debugFreezeAtPeak = false;
     public enum Axis { X, Y, Z }
-    [SerializeField] private float extendTime = 0.35f;       // slower = clearer
+    [SerializeField] private float extendTime = 0.35f;
     [SerializeField] private float holdTime = 0.30f;
     [SerializeField] private float retractTime = 0.50f;
-    [SerializeField, Tooltip("Global playback multiplier. 1=normal, 0.5=slower, 2=faster")]
+    [SerializeField, Tooltip("1=normal, 0.5=slower, 2=faster")]
     private float stabPlaybackSpeed = 0.7f;
-    [SerializeField, Tooltip("Guarantee visibility at full extension (seconds).")]
+    [SerializeField, Tooltip("Guarantee visibility at full extension (s).")]
     private float minPeakSeconds = 0.25f;
 
     [Header("Length & Thickness")]
@@ -55,11 +50,12 @@ public class KrakenTelegraphBands : MonoBehaviour
     [SerializeField] private float extraLengthMargin = 0.3f;
     [SerializeField, Tooltip("Reach multiplier along LENGTH axis (not thickness).")]
     private float stabLengthMultiplier = 1.5f;
-    [SerializeField, Tooltip("Enable damage collider only while fully extended")]
-    private bool enableDamageOnlyWhenExtended = true;
-    [SerializeField] private Collider damageCollider; // optional; else auto-find
+    [SerializeField, Tooltip("If assigned, used as damage collider root (else auto BoxCollider on gfx).")]
+    private Collider damageCollider;
     [SerializeField, Tooltip("Used if base localScale on length axis is 0")]
     private float minVisibleAxisScale = 1f;
+    [SerializeField, Tooltip("Thickness (world units) for auto BoxCollider (across non-length axes).")]
+    private float colliderThickness = 0.8f;
 
     [Header("Prefab Facing Fix")]
     [SerializeField] private Axis prefabForwardAxis = Axis.Z;       // set Y if mesh points up
@@ -128,7 +124,7 @@ public class KrakenTelegraphBands : MonoBehaviour
 
             if (maxRowExclusive - minRow <= 0)
             {
-                Debug.LogWarning("[Kraken] No inner rows (rows must be >=3 when excluding edges).");
+                if (logDebug) Debug.LogWarning("[Kraken] No inner rows (rows must be >=3 when excluding edges).");
                 yield return WaitSmart(Mathf.Max(0.25f, cycleInterval));
                 continue;
             }
@@ -157,7 +153,6 @@ public class KrakenTelegraphBands : MonoBehaviour
         img.preserveAspect = markerPreserveAspect;
         if (markerFlashA) img.sprite = markerFlashA;
 
-        // ⬇️ ensure UI marker is on top of hierarchy
         img.transform.SetAsLastSibling();
 
         var rt = img.rectTransform;
@@ -210,14 +205,14 @@ public class KrakenTelegraphBands : MonoBehaviour
         float elapsed = 0f;
         float halfPeriod = 0.5f / Mathf.Max(0.01f, markerFlashHz);
         Sprite a = markerFlashA ? markerFlashA : img.sprite;
-        Sprite b = markerFlashB ? markerFlashB : a; // fallback to A
+        Sprite b = markerFlashB ? markerFlashB : a;
 
         if (a) img.sprite = a;
 
         while (elapsed < seconds && img)
         {
             img.sprite = (img.sprite == a) ? b : a;
-            yield return WaitSmart(halfPeriod); // pause-aware
+            yield return WaitSmart(halfPeriod);
             elapsed += halfPeriod;
         }
     }
@@ -267,7 +262,7 @@ public class KrakenTelegraphBands : MonoBehaviour
         Vector3 tipWorld = ScreenToWorldOnCameraPlane(tipPx, attackPlaneY);
         baseWorld.y = attackPlaneY; tipWorld.y = attackPlaneY;
 
-        Debug.DrawLine(baseWorld, tipWorld, Color.yellow, debugLineSeconds);
+        if (logDebug) Debug.DrawLine(baseWorld, tipWorld, Color.yellow, debugLineSeconds);
 
         Vector3 dir = tipWorld - baseWorld;
         float len = dir.magnitude;
@@ -281,8 +276,12 @@ public class KrakenTelegraphBands : MonoBehaviour
         }
 
         var go = Instantiate(tentaclePrefab, baseWorld, Quaternion.identity);
-        // ⬇️ keep instance on top (hierarchy order)
-        go.transform.SetAsLastSibling();
+
+        // ensure we have a kinematic rigidbody so trigger events can happen
+        var rb = go.GetComponent<Rigidbody>();
+        if (!rb) rb = go.AddComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
 
         var gfx = ResolveGraphic(go.transform, tentacleGraphicRoot, tentacleGraphicChildPath);
 
@@ -308,10 +307,37 @@ public class KrakenTelegraphBands : MonoBehaviour
         float axisBase = GetAxis(baseScale, activeAxis);
         if (Mathf.Abs(axisBase) < 1e-4f) axisBase = minVisibleAxisScale;
 
+        // start collapsed
         Vector3 s0 = baseScale; SetAxis(ref s0, activeAxis, 0f); gfx.localScale = s0;
 
-        Collider col = damageCollider ? damageCollider : go.GetComponentInChildren<Collider>();
-        if (col && enableDamageOnlyWhenExtended) col.enabled = false;
+        // collider on the graphic so it scales with length
+        Collider col = damageCollider ? damageCollider : gfx.GetComponent<Collider>();
+        BoxCollider bc = null;
+        if (!col)
+        {
+            bc = gfx.gameObject.AddComponent<BoxCollider>();
+            col = bc;
+        }
+        bc = col as BoxCollider;
+        if (bc)
+        {
+            bc.isTrigger = true;
+            // size 1 along the length axis; thickness on the other two axes
+            Vector3 size = Vector3.one * colliderThickness;
+            switch (activeAxis)
+            {
+                case Axis.X: size = new Vector3(1f, colliderThickness, colliderThickness); break;
+                case Axis.Y: size = new Vector3(colliderThickness, 1f, colliderThickness); break;
+                default: size = new Vector3(colliderThickness, colliderThickness, 1f); break;
+            }
+            bc.size = size;
+            bc.center = Vector3.zero;
+        }
+        else
+        {
+            // fallback: force trigger
+            col.isTrigger = true;
+        }
 
         StartCoroutine(StabRoutine_Factor_Axis(go, gfx, baseScale, axisBase, targetFactor, col, activeAxis));
     }
@@ -324,47 +350,64 @@ public class KrakenTelegraphBands : MonoBehaviour
         float HoldDur() => holdTime / Speed();
         float RetDur() => retractTime / Speed();
 
-        void ClampPlaneY()
-        {
-            if (!go) return;
-            var p = go.transform.position;
-            go.transform.position = new Vector3(p.x, attackPlaneY, p.z);
-        }
-
         // extend
         float t = 0f, ext = Mathf.Max(0.01f, ExtDur());
         while (t < ext && go)
         {
             t += Delta();
-            float k = Mathf.Clamp01(ext <= 0f ? 1f : t / ext);
+            float k = Mathf.Clamp01(t / ext);
             float f = 1f - (1f - k) * (1f - k);
             float factor = Mathf.Lerp(0f, targetFactor, f);
             Vector3 s = baseScale; SetAxis(ref s, axis, factor * axisBase);
-            gfx.localScale = s; ClampPlaneY(); yield return null;
+            gfx.localScale = s;
+            yield return null;
         }
 
-        if (go && col && enableDamageOnlyWhenExtended) col.enabled = true;
-
-        // hold (pause-aware)
+        // HOLD: damage once on first detection; keep checking each frame so thin/fast players still get hit
+        bool damaged = false;
         float hold = Mathf.Max(minPeakSeconds, HoldDur());
-        if (go && (hold > 0f || debugFreezeAtPeak))
-        {
-            if (debugFreezeAtPeak) hold = Mathf.Max(hold, 999f);
-            yield return WaitSmart(hold);
-        }
+        if (debugFreezeAtPeak) hold = Mathf.Max(hold, 999f);
 
-        if (go && col && enableDamageOnlyWhenExtended) col.enabled = false;
+        float elapsed = 0f;
+        while (go && elapsed < hold)
+        {
+            if (!damaged && col)
+            {
+                // Use world-space bounds (already accounts for scale & rotation), include triggers
+                Vector3 center = col.bounds.center;
+                Vector3 halfExtents = col.bounds.extents;
+                Quaternion ori = Quaternion.identity; // bounds already in world
+                int mask = ~0;
+                var hits = Physics.OverlapBox(center, halfExtents, ori, mask, QueryTriggerInteraction.Collide);
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    var ph = hits[i].GetComponent<PlayerHealth>();
+                    if (ph != null)
+                    {
+                        ph.ApplyDamage(1);
+                        damaged = true;
+                        break;
+                    }
+                }
+            }
+
+            float d = Delta();
+            if (d <= 0f) { yield return null; continue; }
+            elapsed += d;
+            yield return null;
+        }
 
         // retract
         t = 0f; float ret = Mathf.Max(0.01f, RetDur());
         while (t < ret && go)
         {
             t += Delta();
-            float k = Mathf.Clamp01(ret <= 0f ? 1f : t / ret);
+            float k = Mathf.Clamp01(t / ret);
             float f = k * k;
             float factor = Mathf.Lerp(targetFactor, 0f, f);
             Vector3 s = baseScale; SetAxis(ref s, axis, factor * axisBase);
-            gfx.localScale = s; ClampPlaneY(); yield return null;
+            gfx.localScale = s;
+            yield return null;
         }
 
         if (go) Destroy(go);
