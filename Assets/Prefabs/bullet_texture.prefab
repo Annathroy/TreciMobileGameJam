@@ -111,7 +111,7 @@ MonoBehaviour:
   destroyOnHit: 1
   applyDamageOnTrigger: 0
   hitVFX: {fileID: 0}
-  hitSFX: {fileID: 0}
+  hitSFX: {fileID: 8300000, guid: ffa40e5a122cd69459d3a87c9f7b8347, type: 3}
   hitSFXVolume: 1
 --- !u!135 &7607516797364428965
 SphereCollider:
