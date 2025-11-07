@@ -280,7 +280,7 @@ CapsuleCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_Radius: 1
   m_Height: 3.68
@@ -350,6 +350,12 @@ MonoBehaviour:
   runOutMaxTime: 4
   offscreenMargin: 3
   destroyOnEnd: 0
+  entryOffset: 2
+  entryInset: 0.75
+  entryTimeout: 3
+  useUnscaledTime: 0
+  enterFromBottom: 0
+  debugLog: 0
 --- !u!114 &124202615307072629
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -422,7 +428,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3

@@ -103,6 +103,7 @@ MonoBehaviour:
   lifeTime: 8
   skin: 0.02
   collisionGrace: 0.15
+  armDistance: 0.5
   hitMask:
     serializedVersion: 2
     m_Bits: 256
@@ -126,8 +127,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0.0009903866, y: 0.01, z: 0.0074348045}
+  m_Center: {x: 0.000082973536, y: 0, z: -0.001282584}
 --- !u!54 &5512973897514610447
 Rigidbody:
   m_ObjectHideFlags: 0

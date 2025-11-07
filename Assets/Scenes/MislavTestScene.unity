@@ -187,7 +187,7 @@ MonoBehaviour:
   spawnIntervalRange: {x: 3, y: 7}
   startDelay: 1
   playOnStart: 1
-  maxConcurrent: 4
+  maxConcurrent: 1
   warmStartSpawns: 0
   enableRamp: 0
   rampPeriod: 20
